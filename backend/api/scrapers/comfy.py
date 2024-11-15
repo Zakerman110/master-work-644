@@ -1,5 +1,7 @@
 from selenium.common import NoSuchElementException
+from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
+from backend.logger import logger
 
 from api.utils.web_driver import get_driver
 import time
@@ -9,14 +11,21 @@ def scrape_comfy_product(product_name):
     driver = get_driver()
 
     # URL for searching the product on Comfy
-    search_url = f"https://comfy.ua/search/?q={product_name.replace(' ', '%20')}"
-    driver.get(search_url)
-    time.sleep(5)
+    # search_url = f"https://comfy.ua/search/?q={product_name.replace(' ', '%20')}"
+    # driver.get(search_url)
+    # time.sleep(5)
+
+    driver.get('https://comfy.ua/')
+    time.sleep(3)
+
+    search_input = driver.find_element(By.XPATH, '//input[@name="q"]')
+    search_input.send_keys(product_name + Keys.ENTER)
+    time.sleep(3)
 
     try:
         # Find the product link (Comfy uses 'product-item__name' for product headings)
         product_link = driver.find_element(By.CLASS_NAME, 'prdl-item__name').get_attribute('href')
-        print(f"Found product link: {product_link}")
+        logger.info(f"Found product link: {product_link}")
         # product_link.click()
 
         # Scrape the product details
@@ -71,9 +80,9 @@ def scrape_comfy_reviews(driver, product_url):
                 'rating': round(review_rating, 1)
             })
 
-        print(f"Scraped {len(reviews)} valid reviews with ratings.")
+        logger.info(f"Scraped {len(reviews)} valid reviews with ratings.")
 
     except NoSuchElementException:
-        print("No reviews found.")
+        logger.warn("No reviews found.")
 
     return reviews

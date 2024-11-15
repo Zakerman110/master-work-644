@@ -1,36 +1,35 @@
-from api.models import Product, Review
+from api.models import Product, ProductSource, Review
+from datetime import datetime
+from backend.logger import logger
 
 
-def save_product_to_db(product_data):
+def save_product_to_db(product_data, product_id):
     """
-    Save a product and its reviews to the database if it doesn't already exist.
-    If the product exists, update its price and updated_at timestamp.
+    Save a product and its marketplace-specific data (price, URL, and reviews) to the database.
+    Updates existing entries if they already exist.
     """
-    # Check if the product already exists by URL
-    product, created = Product.objects.get_or_create(
-        url=product_data['url'],
+    # Retrieve the main Product entry using product_id
+    product = Product.objects.get(id=product_id)
+
+    # Step 2: Save or update the ProductSource entry for this marketplace
+    source, created = ProductSource.objects.update_or_create(
+        product=product,
+        marketplace=product_data['marketplace'],  # Marketplace name e.g., 'rozetka'
         defaults={
-            'name': product_data['name'],
+            'url': product_data['url'],
             'price': product_data['price'],
+            'last_updated': datetime.now(),
         }
     )
 
-    if created:
-        print(f"Product '{product_data['name']}' added to the database.")
-    else:
-        # If the product exists, check if we need to update it
-        if product.price != product_data['price']:
-            product.price = product_data['price']
-            product.save()  # This will also update the `updated_at` field
-            print(f"Product '{product_data['name']}' updated with new price.")
-        else:
-            print(f"Product '{product_data['name']}' already exists and is up-to-date.")
-
-    if created:
-        for review in product_data['reviews']:
+    # Step 3: Save reviews for this ProductSource entry
+    if created:  # Only add reviews if this source is new to avoid duplicates
+        for review in product_data.get('reviews', []):
             Review.objects.create(
-                product=product,
+                product_source=source,
                 text=review['text'],
                 rating=review['rating']
             )
-        print(f"Added {len(product_data['reviews'])} reviews for product '{product_data['name']}'.")
+        logger.info(f"Added {len(product_data.get('reviews', []))} reviews for product '{product.name}' on {source.marketplace}.")
+
+    logger.info(f"Data for '{product.name}' on '{source.marketplace}' has been saved to the database.")

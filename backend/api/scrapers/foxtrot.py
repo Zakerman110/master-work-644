@@ -1,21 +1,30 @@
+from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
+from backend.logger import logger
 from ..utils.web_driver import get_driver  # Import the centralized get_driver function
 
 def scrape_foxtrot_product(product_name):
     driver = get_driver()
 
     # Construct the search URL for Foxtrot
-    search_url = f"https://www.foxtrot.com.ua/uk/search?query={product_name.replace(' ', '%20')}"
-    driver.get(search_url)
-    time.sleep(3)  # Allow some time for the page to load
+    # search_url = f"https://www.foxtrot.com.ua/uk/search?query={product_name.replace(' ', '%20')}"
+    # driver.get(search_url)
+    # time.sleep(3)  # Allow some time for the page to load
+
+    driver.get('https://comfy.ua/')
+    time.sleep(3)
+
+    search_input = driver.find_element(By.XPATH, '//input[@type="search"]')
+    search_input.send_keys(product_name + Keys.ENTER)
+    time.sleep(3)
 
     try:
         # Find the first product link in the search results
         product_link_element = driver.find_element(By.CLASS_NAME, 'card__title')
         product_link = product_link_element.get_attribute('href')
-        print(f"Found product link: {product_link}")
+        logger.info(f"Found product link: {product_link}")
 
         # Scrape the product details
         product_details = scrape_foxtrot_product_details(driver, product_link)
@@ -31,7 +40,7 @@ def scrape_foxtrot_product_details(driver, product_url):
     time.sleep(3)  # Allow time for the product page to load
 
     # Extract product name
-    product_name_element = driver.find_element(By.TAG_NAME, 'h1')
+    product_name_element = driver.find_element(By.XPATH, '//h1[@id="product-page-title"]')
     product_name = product_name_element.text.strip() if product_name_element else "N/A"
 
     # Extract product price
@@ -81,9 +90,9 @@ def scrape_foxtrot_reviews(driver):
                 'rating': review_rating
             })
 
-        print(f"Scraped {len(reviews)} reviews.")
+        logger.info(f"Scraped {len(reviews)} reviews.")
 
     except NoSuchElementException:
-        print("No reviews section found for this product.")
+        logger.warn("No reviews section found for this product.")
 
     return reviews

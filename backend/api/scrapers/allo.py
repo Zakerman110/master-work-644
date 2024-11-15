@@ -1,6 +1,8 @@
+from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
+from backend.logger import logger
 from ..utils.web_driver import get_driver  # Import the centralized get_driver function
 
 
@@ -8,14 +10,20 @@ def scrape_allo_product(product_name):
     driver = get_driver()
 
     # URL for searching the product on Allo
-    search_url = f"https://allo.ua/ua/catalogsearch/result/?q={product_name.replace(' ', '%20')}"
-    driver.get(search_url)
+    # search_url = f"https://allo.ua/ua/catalogsearch/result/?q={product_name.replace(' ', '%20')}"
+    # driver.get(search_url)
+    # time.sleep(3)
+    driver.get('https://allo.ua')
+    time.sleep(3)
+
+    search_input = driver.find_element(By.XPATH, '//input[@name="search"]')
+    search_input.send_keys(product_name + Keys.ENTER)
     time.sleep(3)
 
     try:
         # Find the first product link in the search results (Allo uses 'product-card__title' class)
         product_link = driver.find_element(By.CLASS_NAME, 'product-card__title').get_attribute('href')
-        print(f"Found product link: {product_link}")
+        logger.info(f"Found product link: {product_link}")
 
         # Scrape the product details
         product_details = scrape_allo_product_details(driver, product_link)
@@ -68,10 +76,10 @@ def scrape_allo_reviews(driver, product_url):
                 'rating': review_rating
             })
 
-        print(f"Scraped {len(reviews)} reviews.")
+        logger.info(f"Scraped {len(reviews)} reviews.")
 
     except NoSuchElementException:
-        print("No reviews found for this product.")
+        logger.info("No reviews found for this product.")
 
     return reviews
 

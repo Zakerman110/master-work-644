@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
+from backend.logger import logger
 from ..utils.web_driver import get_driver  # Import the centralized get_driver function
 
 def scrape_citrus_product(product_name):
@@ -15,7 +16,7 @@ def scrape_citrus_product(product_name):
         # Find the first product link in the search results
         product_link_element = driver.find_element(By.XPATH, '//a[contains(@class,"MainProductCard-module__link")]')  # Update with actual class name if different
         product_link = product_link_element.get_attribute('href')
-        print(f"Found product link: {product_link}")
+        logger.info(f"Found product link: {product_link}")
 
         # Scrape the product details
         product_details = scrape_citrus_product_details(driver, product_link)
@@ -88,9 +89,9 @@ def scrape_citrus_reviews(driver):
                 'rating': review_rating
             })
 
-        print(f"Scraped {len(reviews)} reviews.")
+        logger.info(f"Scraped {len(reviews)} reviews.")
 
     except NoSuchElementException:
-        print("No reviews section found for this product.")
+        logger.warn("No reviews section found for this product.")
 
     return reviews
