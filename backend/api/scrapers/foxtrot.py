@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
 from backend.logger import logger
-from ..utils.web_driver import get_driver  # Import the centralized get_driver function
+from ..utils.web_driver import get_driver, quit_driver  # Import the centralized get_driver function
 
 def scrape_foxtrot_product(product_name):
     driver = get_driver()
@@ -30,7 +30,7 @@ def scrape_foxtrot_product(product_name):
         product_details = scrape_foxtrot_product_details(driver, product_link)
 
     finally:
-        driver.quit()
+        quit_driver()
 
     return product_details
 

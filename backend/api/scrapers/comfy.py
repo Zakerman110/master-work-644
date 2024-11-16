@@ -3,7 +3,7 @@ from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from backend.logger import logger
 
-from api.utils.web_driver import get_driver
+from api.utils.web_driver import get_driver, quit_driver
 import time
 
 
@@ -32,7 +32,7 @@ def scrape_comfy_product(product_name):
         product_details = scrape_comfy_product_details(driver, product_link)
 
     finally:
-        driver.quit()
+        quit_driver()
 
     return product_details
 

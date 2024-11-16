@@ -1,8 +1,13 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
+
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from backend.logger import logger
-from ..utils.web_driver import get_driver  # Import the centralized get_driver function
+from ..utils.web_driver import get_driver, quit_driver  # Import the centralized get_driver function
+
 
 def scrape_citrus_product(product_name):
     driver = get_driver()
@@ -13,16 +18,35 @@ def scrape_citrus_product(product_name):
     time.sleep(3)  # Allow some time for the page to load
 
     try:
+        # Check if the empty result section is present
+        wait = WebDriverWait(driver, 10)  # Set a maximum wait time of 10 seconds
+        try:
+            empty_section = wait.until(
+                EC.presence_of_element_located((By.XPATH, '//section[contains(@class,"EmptySearch_emptyContainer")]'))
+            )
+            if empty_section:
+                logger.info("No results found for the given product. Skipping scraping.")
+                quit_driver()  # Quit the driver
+                return None  # Skip scraping and return None
+        except Exception as e:
+            logger.info("No empty result section detected. Proceeding with scraping.")
+
         # Find the first product link in the search results
-        product_link_element = driver.find_element(By.XPATH, '//a[contains(@class,"MainProductCard-module__link")]')  # Update with actual class name if different
+        product_link_element = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//div[@class="catalog-facet"]//a[contains(@class,"MainProductCard-module__link")]'))
+        )
         product_link = product_link_element.get_attribute('href')
         logger.info(f"Found product link: {product_link}")
 
         # Scrape the product details
         product_details = scrape_citrus_product_details(driver, product_link)
 
+    except Exception as e:
+        logger.error(f"An error occurred while scraping Citrus: {e}")
+        product_details = None
+
     finally:
-        driver.quit()
+        quit_driver()  # Ensure the driver quits
 
     return product_details
 
@@ -66,7 +90,7 @@ def scrape_citrus_reviews(driver):
 
         for review_element in review_elements:
             # Extract review text
-            review_text_element = review_element.find_element(By.XPATH, '//p[./span[text()="Опыт использования"]]')
+            review_text_element = review_element.find_element(By.XPATH, './/p[./span[text()="Опыт использования"]]')
             review_text = review_text_element.text.strip() if review_text_element else "No review text"
 
             # Extract review rating

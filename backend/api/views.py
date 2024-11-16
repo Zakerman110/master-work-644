@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from api.scrapers import scraper_manager
 from api.models import Product
-from api.serializers import ProductSerializer, DetailedProductSerializer
+from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer
 
 
 @api_view(['GET'])
@@ -40,3 +40,26 @@ def get_product_details(request):
     # Serialize detailed product
     serialized_product = DetailedProductSerializer(product)
     return Response(serialized_product.data)
+
+@api_view(['GET'])
+def get_reviews_for_product(request, product_id):
+    """
+    Retrieve all reviews for a product, grouped by its sources.
+    """
+    try:
+        product = Product.objects.get(id=product_id)
+        sources = product.sources.all()
+
+        reviews_data = []
+        for source in sources:
+            reviews = source.reviews.all()
+            serialized_reviews = ReviewSerializer(reviews, many=True).data
+            reviews_data.append({
+                "marketplace": source.marketplace,
+                "reviews": serialized_reviews
+            })
+
+        return Response(reviews_data)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found."}, status=404)
+

@@ -12,7 +12,7 @@ def save_product_to_db(product_data, product_id):
     product = Product.objects.get(id=product_id)
 
     # Step 2: Save or update the ProductSource entry for this marketplace
-    source, created = ProductSource.objects.update_or_create(
+    source, _ = ProductSource.objects.update_or_create(
         product=product,
         marketplace=product_data['marketplace'],  # Marketplace name e.g., 'rozetka'
         defaults={
@@ -22,14 +22,26 @@ def save_product_to_db(product_data, product_id):
         }
     )
 
-    # Step 3: Save reviews for this ProductSource entry
-    if created:  # Only add reviews if this source is new to avoid duplicates
-        for review in product_data.get('reviews', []):
-            Review.objects.create(
-                product_source=source,
-                text=review['text'],
-                rating=review['rating']
-            )
-        logger.info(f"Added {len(product_data.get('reviews', []))} reviews for product '{product.name}' on {source.marketplace}.")
+    # Step 3: Add reviews for this ProductSource entry
+    # Ensure that existing reviews for this source are not duplicated
+    existing_reviews = set(
+        source.reviews.values_list('text', flat=True)
+    )  # Use 'text' as a unique identifier for simplicity (can be enhanced)
+
+    new_reviews = [
+        Review(
+            product_source=source,
+            text=review['text'],
+            rating=review['rating']
+        )
+        for review in product_data.get('reviews', [])
+        if review['text'] not in existing_reviews  # Avoid duplicates
+    ]
+
+    if new_reviews:
+        Review.objects.bulk_create(new_reviews)
+        logger.info(f"Added {len(new_reviews)} new reviews for product '{product.name}' on {source.marketplace}.")
+    else:
+        logger.info(f"No new reviews to add for product '{product.name}' on {source.marketplace}.")
 
     logger.info(f"Data for '{product.name}' on '{source.marketplace}' has been saved to the database.")
