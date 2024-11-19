@@ -6,6 +6,7 @@ import time
 
 from selenium.webdriver.support.wait import WebDriverWait
 
+from api.utils.category_utils import ROZETKA_CATEGORIES
 from backend.logger import logger
 
 from api.utils.web_driver import get_driver, quit_driver
@@ -22,10 +23,11 @@ def scrape_rozetka_suggestions(product_name, category_id=None):
     # driver.get('https://rozetka.com.ua/search/')
 
     base_url = "https://rozetka.com.ua/ua/search/?redirected=0"
-    if category_id:
-        search_url = f"{base_url}&section_id={category_id}&text={product_name.replace(' ', '%20')}"
-    else:
-        search_url = f"{base_url}&text={product_name.replace(' ', '%20')}"
+    # if category_id:
+    #     search_url = f"{base_url}&section_id={category_id}&text={product_name.replace(' ', '%20')}"
+    # else:
+    #     search_url = f"{base_url}&text={product_name.replace(' ', '%20')}"
+    search_url = f"{base_url}&text={product_name.replace(' ', '%20')}"
     time.sleep(3)
     # driver.save_screenshot(f"screenshot_{int(time.time() * 1000)}.png")
 
@@ -39,50 +41,74 @@ def scrape_rozetka_suggestions(product_name, category_id=None):
     suggestions = []
 
     try:
-        product_elements = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'goods-tile__inner')))
-        # Find all product elements in the search results
-        # product_elements = driver.find_elements(By.CLASS_NAME, 'goods-tile__inner')
-
-        for product in product_elements:
-            try:
-                # Scroll the product element into view
-                driver.execute_script("arguments[0].scrollIntoView(true);", product)
-                time.sleep(0.2)  # Optional: Slight delay to allow for smooth scrolling
-
-                # Get product name
-                product_name = product.find_element(By.CLASS_NAME, 'goods-tile__title').text.strip()
-
-                # Get product link
-                product_link = product.find_element(By.CLASS_NAME, 'goods-tile__heading').get_attribute('href')
-
-                # Get product price
-                try:
-                    product_price = product.find_element(By.CLASS_NAME, 'goods-tile__price-value').text.strip()
-                except NoSuchElementException:
-                    product_price = "Price not available"
-
-                # Get product image URL using the provided XPath
-                try:
-                    product_image = product.find_element(By.XPATH, './/a[contains(@class,"goods-tile__picture")]/img[1]').get_attribute('src')
-                except NoSuchElementException:
-                    product_image = None  # Set to None if image is not found
-
-                suggestions.append({
-                    'name': product_name,
-                    'url': product_link,
-                    'price': product_price,
-                    'image': product_image  # Add image URL to the suggestion
-                })
-
-            except NoSuchElementException:
-                logger.error("Error extracting product details for a suggestion, skipping.")
-                continue
-
+        if category_id:
+            key = next((k for k, v in ROZETKA_CATEGORIES.items() if v == int(category_id)), None)
+            category_link = wait.until(EC.presence_of_element_located((By.XPATH, f'//a[@data-test="filter-link" and ./span[.="{key}"]]')))
+            category_link.click()
+            time.sleep(2)
+            wait.until(EC.presence_of_element_located((By.XPATH, f'//li[contains(@class,"breadcrumbs__item ")]//span[.="{key}"]')))
+            suggestions = get_catalog_grid_product(driver, key)
+        else:
+            for category_name, _ in ROZETKA_CATEGORIES.items():
+                category_link = wait.until(EC.presence_of_element_located((By.XPATH, f'//a[@data-test="filter-link" and ./span[.="{category_name}"]]')))
+                category_link.click()
+                time.sleep(2)
+                wait.until(EC.presence_of_element_located((By.XPATH, f'//li[contains(@class,"breadcrumbs__item ")]//span[.="{category_name}"]')))
+                category_suggestions = get_catalog_grid_product(driver, category_name)
+                suggestions = suggestions + category_suggestions
     finally:
         quit_driver()
 
     logger.info(f"Found {len(suggestions)} suggestions for '{product_name}'.")
     return suggestions
+
+
+def get_catalog_grid_product(driver, category_name):
+    wait = WebDriverWait(driver, 10)  # Wait up to 10 seconds
+    product_elements = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'goods-tile__inner')))
+    # Find all product elements in the search results
+    # product_elements = driver.find_elements(By.CLASS_NAME, 'goods-tile__inner')
+
+    category_suggestions = []
+
+    for product in product_elements:
+        try:
+            # Scroll the product element into view
+            driver.execute_script("arguments[0].scrollIntoView(true);", product)
+            time.sleep(0.2)  # Optional: Slight delay to allow for smooth scrolling
+
+            # Get product name
+            product_name = product.find_element(By.CLASS_NAME, 'goods-tile__title').text.strip()
+
+            # Get product link
+            product_link = product.find_element(By.CLASS_NAME, 'goods-tile__heading').get_attribute('href')
+
+            # Get product price
+            try:
+                product_price = product.find_element(By.CLASS_NAME, 'goods-tile__price-value').text.strip()
+            except NoSuchElementException:
+                product_price = "Price not available"
+
+            # Get product image URL using the provided XPath
+            try:
+                product_image = product.find_element(By.XPATH,
+                                                     './/a[contains(@class,"goods-tile__picture")]/img[1]').get_attribute(
+                    'src')
+            except NoSuchElementException:
+                product_image = None  # Set to None if image is not found
+
+            category_suggestions.append({
+                'name': product_name,
+                'url': product_link,
+                'price': product_price,
+                'image': product_image,
+                'category': category_name
+            })
+
+        except NoSuchElementException:
+            logger.error("Error extracting product details for a suggestion, skipping.")
+            continue
+    return category_suggestions
 
 
 def scrape_rozetka_product(product_name, partial_names):

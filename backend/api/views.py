@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from api.scrapers import scraper_manager
 from api.models import Product
 from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer
+from api.utils.category_utils import ROZETKA_CATEGORIES
 
 
 @api_view(['GET'])
@@ -72,15 +73,4 @@ def get_rozetka_categories(request):
     """
     categories = [{"name": name, "id": id} for name, id in ROZETKA_CATEGORIES.items()]
     return Response(categories)
-
-
-ROZETKA_CATEGORIES = {
-    "Ноутбуки": 80004,
-    "Мобільні телефони": 80003,
-    "Монітори": 80089,
-    "Комп'ютерні комплектуючі": 80026,
-    "Телевізори": 80037,
-    "Планшети": 130309,
-    "Повербанки та зарядні станції": 4674582,
-}
 

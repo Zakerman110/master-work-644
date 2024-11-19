@@ -1,12 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from django.db.models import Q
 from api.models import Product, ProductSource
 from api.scrapers.comfy import scrape_comfy_product
 from api.scrapers.rozetka import scrape_rozetka_product, scrape_rozetka_suggestions
 from api.scrapers.allo import scrape_allo_product
 from api.scrapers.foxtrot import scrape_foxtrot_product
 from api.scrapers.citrus import scrape_citrus_product
+from api.utils.category_utils import ROZETKA_CATEGORIES
 from api.utils.db_utils import save_product_to_db
 from api.utils.search_utils import generate_partial_product_names
 from backend.logger import logger
@@ -19,9 +21,18 @@ def get_product_suggestions(product_name, category_id=None):
     First, try to find matching products in the database.
     If no products are found, scrape new suggestions from Rozetka.
     """
-    # Query the database for any product matching the name (ignoring case)
-    logger.info(f"Fetching product suggestions for '{product_name}'")
-    suggestions = Product.objects.filter(name__icontains=product_name)
+    if category_id and category_id.strip():
+        category_name = next((k for k, v in ROZETKA_CATEGORIES.items() if v == int(category_id)), None)
+    else:
+        category_name = None
+
+    logger.info(f"Fetching product suggestions for '{product_name}', category '{category_name}'")
+
+    filters = Q(name__icontains=product_name)
+    if category_name:
+        filters &= Q(category__icontains=category_name)
+
+    suggestions = Product.objects.filter(filters)
 
     if suggestions.exists():
         logger.info(f"Found existing suggestions for '{product_name}' in the database.")
@@ -37,6 +48,7 @@ def get_product_suggestions(product_name, category_id=None):
         # Find or create the main Product entry
         product, _ = Product.objects.get_or_create(
             name=suggestion['name'],
+            category=suggestion['category'],
             defaults={
                 'image_url': suggestion.get('image', ''),
                 'is_detailed': False,  # Mark as non-detailed initially
@@ -54,8 +66,8 @@ def get_product_suggestions(product_name, category_id=None):
             }
         )
 
-    logger.info(f"Scraped and saved suggestions for '{product_name}'.")
-    return Product.objects.filter(name__icontains=product_name)
+    logger.info(f"Scraped and saved suggestions for '{product_name}', category '{category_name}'.")
+    return Product.objects.filter(filters)
 
 
 def scrape_and_save_product(product_name):
