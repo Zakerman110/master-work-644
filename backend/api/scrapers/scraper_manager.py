@@ -8,11 +8,12 @@ from api.scrapers.allo import scrape_allo_product
 from api.scrapers.foxtrot import scrape_foxtrot_product
 from api.scrapers.citrus import scrape_citrus_product
 from api.utils.db_utils import save_product_to_db
+from api.utils.search_utils import generate_partial_product_names
 from backend.logger import logger
 from urllib.parse import urlparse
 
 
-def get_product_suggestions(product_name):
+def get_product_suggestions(product_name, category_id=None):
     """
     Retrieve product suggestions based on the product name.
     First, try to find matching products in the database.
@@ -29,7 +30,7 @@ def get_product_suggestions(product_name):
     logger.info(f"No matching products found for '{product_name}' in the database. Scraping suggestions...")
 
     # Primary source for product suggestions (e.g., Rozetka)
-    suggestions_data = scrape_rozetka_suggestions(product_name)
+    suggestions_data = scrape_rozetka_suggestions(product_name, category_id)
 
     # Save each suggestion to the database if it doesn't already exist
     for suggestion in suggestions_data:
@@ -56,24 +57,6 @@ def get_product_suggestions(product_name):
     logger.info(f"Scraped and saved suggestions for '{product_name}'.")
     return Product.objects.filter(name__icontains=product_name)
 
-def get_identifier_from_product_source(product):
-    # Attempt to retrieve the ProductSource for 'rozetka'
-    try:
-        product_source = product.sources.get(marketplace="rozetka")
-
-        # Parse the URL to extract the identifier
-        parsed_url = urlparse(product_source.url)
-        path_segments = parsed_url.path.strip('/').split('/')
-
-        # Extract the product identifier if it exists in the path
-        product_identifier = path_segments[1] if len(path_segments) > 1 else None
-        logger.info("Identifier: " + product_identifier)
-        return product_identifier
-
-    except ProductSource.DoesNotExist:
-        logger.warn("No ProductSource found for 'rozetka'")
-        return None
-
 
 def scrape_and_save_product(product_name):
     """
@@ -92,24 +75,25 @@ def scrape_and_save_product(product_name):
     logger.info(f"Scraping product data for '{product_name}' from multiple sources...")
 
     # name from url:
-    identifier = get_identifier_from_product_source(product)
-    # TODO: Add check, if identifier consists only of digits, that use original product_name
-    if identifier is not None and not identifier.isdigit():
-        product_name = identifier
+    # identifier = get_identifier_from_product_source(product)
+    # # TODO: Add check, if identifier consists only of digits, that use original product_name
+    # if identifier is not None and not identifier.isdigit():
+    #     product_name = identifier
+    partial_names = generate_partial_product_names(product_name)
 
     # Scrape functions for each marketplace
     scrape_functions = {
         'rozetka': scrape_rozetka_product,
-        'comfy': scrape_comfy_product,
-        'allo': scrape_allo_product,
-        'foxtrot': scrape_foxtrot_product,
+        # 'comfy': scrape_comfy_product,
+        # 'allo': scrape_allo_product,
+        # 'foxtrot': scrape_foxtrot_product,
         'citrus': scrape_citrus_product,
     }
 
     # Concurrently scrape each marketplace for the product data
     with ThreadPoolExecutor() as executor:
         future_to_source = {
-            executor.submit(scrape_func, product_name): source
+            executor.submit(scrape_func, product_name, partial_names): source
             for source, scrape_func in scrape_functions.items()
         }
 

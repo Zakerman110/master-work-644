@@ -11,7 +11,7 @@ from backend.logger import logger
 from api.utils.web_driver import get_driver, quit_driver
 
 
-def scrape_rozetka_suggestions(product_name):
+def scrape_rozetka_suggestions(product_name, category_id=None):
     """
     Scrape search suggestions for a given product name on Rozetka.
     """
@@ -19,14 +19,21 @@ def scrape_rozetka_suggestions(product_name):
 
     # search_url = f"https://rozetka.com.ua/search/?text={product_name.replace(' ', '%20')}"
     # driver.get(search_url)
-    driver.get('https://rozetka.com.ua/search/')
+    # driver.get('https://rozetka.com.ua/search/')
+
+    base_url = "https://rozetka.com.ua/ua/search/?redirected=0"
+    if category_id:
+        search_url = f"{base_url}&section_id={category_id}&text={product_name.replace(' ', '%20')}"
+    else:
+        search_url = f"{base_url}&text={product_name.replace(' ', '%20')}"
     time.sleep(3)
     # driver.save_screenshot(f"screenshot_{int(time.time() * 1000)}.png")
 
     # search_input = driver.find_element(By.XPATH, '//input[@name="search"]')
     wait = WebDriverWait(driver, 10)  # Wait up to 10 seconds
-    search_input = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@name="search"]')))
-    search_input.send_keys(product_name + Keys.ENTER)
+    # search_input = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@name="search"]')))
+    # search_input.send_keys(product_name + Keys.ENTER)
+    driver.get(search_url)
     time.sleep(3)
 
     suggestions = []
@@ -78,7 +85,7 @@ def scrape_rozetka_suggestions(product_name):
     return suggestions
 
 
-def scrape_rozetka_product(product_name):
+def scrape_rozetka_product(product_name, partial_names):
     driver = get_driver()
 
     # search_url = f"https://rozetka.com.ua/search/?text={product_name.replace(' ', '%20')}"

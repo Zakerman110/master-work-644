@@ -1,40 +1,81 @@
 from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from api.utils.search_utils import find_best_match
+
 from backend.logger import logger
 
 from api.utils.web_driver import get_driver, quit_driver
 import time
 
 
-def scrape_comfy_product(product_name):
+def scrape_comfy_product(product_name, partial_names):
     driver = get_driver()
 
-    # URL for searching the product on Comfy
-    # search_url = f"https://comfy.ua/search/?q={product_name.replace(' ', '%20')}"
-    # driver.get(search_url)
-    # time.sleep(5)
-
-    driver.get('https://comfy.ua/')
-    time.sleep(3)
-
-    search_input = driver.find_element(By.XPATH, '//input[@name="q"]')
-    search_input.send_keys(product_name + Keys.ENTER)
-    time.sleep(3)
-
     try:
-        # Find the product link (Comfy uses 'product-item__name' for product headings)
-        product_link = driver.find_element(By.CLASS_NAME, 'prdl-item__name').get_attribute('href')
-        logger.info(f"Found product link: {product_link}")
-        # product_link.click()
+        # Base URL for Comfy search
+        base_url = 'https://comfy.ua/'
 
-        # Scrape the product details
-        product_details = scrape_comfy_product_details(driver, product_link)
+        # Initialize variables to track the best match
+        best_match = None
+        best_score = 0
+
+        # Iterate through partial names to perform searches
+        for partial_name in partial_names:
+            logger.info(f"Searching Comfy with query: {partial_name}")
+
+            # Navigate to Comfy's home page
+            driver.get(base_url)
+            time.sleep(3)  # Allow the page to load
+
+            # Locate the search input and perform the search
+            search_input = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//input[@name="q"]'))
+            )
+            search_input.clear()  # Clear the search bar for the next query
+            search_input.send_keys(partial_name + Keys.ENTER)
+            time.sleep(3)  # Allow search results to load
+
+            try:
+                # Wait for the product elements to load
+                product_elements = WebDriverWait(driver, 10).until(
+                    EC.presence_of_all_elements_located((By.CLASS_NAME, 'prdl-item'))
+                )
+
+                # Extract product names and links from the results
+                results = []
+                for product in product_elements:
+                    try:
+                        name = product.find_element(By.CLASS_NAME, 'prdl-item__name').text.strip()
+                        link = product.find_element(By.CLASS_NAME, 'prdl-item__name').get_attribute('href')
+                        results.append({'name': name, 'url': link})
+                    except Exception as e:
+                        logger.error(f"Error extracting product details: {e}")
+                        continue
+
+                # Find the best match for the current search
+                match = find_best_match(product_name, results)
+                if match and match['score'] > best_score:
+                    best_score = match['score']
+                    best_match = match
+
+            except Exception as e:
+                logger.info(f"No results found for query: {partial_name}")
+                continue
+
+        if best_match:
+            logger.info(f"Best match found on Comfy: {best_match['name']} with score {best_score}")
+            # Navigate to the best match's product page
+            product_details = scrape_comfy_product_details(driver, best_match['url'])
+            return product_details
+        else:
+            logger.info("No suitable match found on Comfy.")
+            return None
 
     finally:
         quit_driver()
-
-    return product_details
 
 
 def scrape_comfy_product_details(driver, product_url):

@@ -6,49 +6,80 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from backend.logger import logger
+from ..utils.search_utils import find_best_match
 from ..utils.web_driver import get_driver, quit_driver  # Import the centralized get_driver function
 
 
-def scrape_citrus_product(product_name):
+def scrape_citrus_product(product_name, partial_names):
     driver = get_driver()
 
-    # Construct the search URL for Citrus
-    search_url = f"https://www.ctrs.com.ua/ru/search/?query={product_name.replace(' ', '%20')}"
-    driver.get(search_url)
-    time.sleep(3)  # Allow some time for the page to load
-
     try:
-        # Check if the empty result section is present
-        wait = WebDriverWait(driver, 10)  # Set a maximum wait time of 10 seconds
-        try:
-            empty_section = wait.until(
-                EC.presence_of_element_located((By.XPATH, '//section[contains(@class,"EmptySearch_emptyContainer")]'))
-            )
-            if empty_section:
-                logger.info("No results found for the given product. Skipping scraping.")
-                quit_driver()  # Quit the driver
-                return None  # Skip scraping and return None
-        except Exception as e:
-            logger.info("No empty result section detected. Proceeding with scraping.")
+        # Base URL for Citrus search
+        base_url = "https://www.ctrs.com.ua/ru/search/?query={query}"
 
-        # Find the first product link in the search results
-        product_link_element = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//div[@class="catalog-facet"]//a[contains(@class,"MainProductCard-module__link")]'))
-        )
-        product_link = product_link_element.get_attribute('href')
-        logger.info(f"Found product link: {product_link}")
+        # Initialize variables to track the best match
+        best_match = None
+        best_score = 0
 
-        # Scrape the product details
-        product_details = scrape_citrus_product_details(driver, product_link)
+        # Iterate through partial names to perform searches
+        for partial_name in partial_names:
+            logger.info(f"Searching Citrus with query: {partial_name}")
 
-    except Exception as e:
-        logger.error(f"An error occurred while scraping Citrus: {e}")
-        product_details = None
+            # Navigate to the search page
+            search_url = base_url.format(query=partial_name.replace(" ", "%20"))
+            driver.get(search_url)
+            time.sleep(3)  # Allow search results to load
+
+            # Check if the empty result section is present
+            try:
+                empty_section = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, '//section[contains(@class,"EmptySearch_emptyContainer")]'))
+                )
+                if empty_section:
+                    logger.info(f"No results found for query: {partial_name}")
+                    continue  # Skip to the next partial name
+            except:
+                logger.info(f"Results found for query: {partial_name}")
+
+            try:
+                # TODO: Handle the case, when product is opened directly because of accurate search query
+                # Wait for product elements to load
+                product_elements = WebDriverWait(driver, 10).until(
+                    EC.presence_of_all_elements_located((By.XPATH, '//div[@class="catalog-facet"]//a[contains(@class,"MainProductCard-module__link")]'))
+                )
+
+                # Extract product names and links from the results
+                results = []
+                for product in product_elements:
+                    try:
+                        name = product.get_attribute('title').strip()  # Citrus includes titles in the 'title' attribute
+                        link = product.get_attribute('href')
+                        results.append({'name': name, 'url': link})
+                    except Exception as e:
+                        logger.error(f"Error extracting product details: {e}")
+                        continue
+
+                # Find the best match for the current search
+                match = find_best_match(product_name, results)
+                if match and match['score'] > best_score:
+                    best_score = match['score']
+                    best_match = match
+
+            except Exception as e:
+                logger.info(f"No valid products found for query: {partial_name}. Error: {e}")
+                continue
+
+        if best_match:
+            logger.info(f"Best match found on Citrus: {best_match['name']} with score {best_score}")
+            # Navigate to the best match's product page
+            product_details = scrape_citrus_product_details(driver, best_match['url'])
+            return product_details
+        else:
+            logger.info("No suitable match found on Citrus.")
+            return None
 
     finally:
         quit_driver()  # Ensure the driver quits
-
-    return product_details
 
 
 def scrape_citrus_product_details(driver, product_url):

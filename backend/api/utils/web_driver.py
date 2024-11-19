@@ -18,7 +18,7 @@ def get_driver():
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-setuid-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument('--disable-blink-features=AutomationControlled')
+        # options.add_argument('--disable-blink-features=AutomationControlled')
         _thread_local.driver = uc.Chrome(options=options, headless=False, use_subprocess=False, user_multi_procs=True)
     return _thread_local.driver
 

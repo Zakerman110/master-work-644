@@ -5,7 +5,8 @@ import time
 from backend.logger import logger
 from ..utils.web_driver import get_driver, quit_driver  # Import the centralized get_driver function
 
-def scrape_foxtrot_product(product_name):
+
+def scrape_foxtrot_product(product_name, partial_names):
     driver = get_driver()
 
     # Construct the search URL for Foxtrot

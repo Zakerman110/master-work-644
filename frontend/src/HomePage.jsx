@@ -1,33 +1,49 @@
-import React, { useState } from 'react';
-import apiClient from './axiosConfig';
+import React, { useState, useEffect } from "react";
+import apiClient from "./axiosConfig";
 
 const HomePage = () => {
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [reviewsBySource, setReviewsBySource] = useState([]);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState("");
+
+    // Fetch categories when the component mounts
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await apiClient.get("/api/categories/");
+                setCategories(response.data);
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     const handleSearch = async () => {
         try {
-            setError('');
+            setError("");
             setSuggestions([]);
             setSelectedProduct(null);
 
             const response = await apiClient.get(`/api/suggestions/`, {
-                params: { query: searchTerm },
+                params: { query: searchTerm, category_id: selectedCategory },
             });
 
             setSuggestions(response.data);
         } catch (err) {
-            setError('Error fetching suggestions.');
+            setError("Error fetching suggestions.");
             console.error(err);
         }
     };
 
     const handleSelectProduct = async (productId) => {
         try {
-            setError('');
+            setError("");
             setSelectedProduct(null);
             setReviewsBySource([]);
 
@@ -42,7 +58,7 @@ const HomePage = () => {
             const reviewsResponse = await apiClient.get(`/api/product/${product.id}/reviews/`);
             setReviewsBySource(reviewsResponse.data);
         } catch (err) {
-            setError('Error fetching product details or reviews.');
+            setError("Error fetching product details or reviews.");
             console.error(err);
         }
     };
@@ -50,20 +66,37 @@ const HomePage = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
             <h1 className="text-4xl font-bold text-center mb-8">Search for a Product</h1>
-            <div className="flex w-full max-w-2xl">
-                <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Type product name..."
-                    className="flex-grow p-3 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                    onClick={handleSearch}
-                    className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600"
+            <div className="flex flex-col w-full max-w-2xl">
+                {/* Search Bar */}
+                <div className="flex mb-4">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Type product name..."
+                        className="flex-grow p-3 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                        onClick={handleSearch}
+                        className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600"
+                    >
+                        Search
+                    </button>
+                </div>
+
+                {/* Category Dropdown */}
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                    Search
-                </button>
+                    <option value="">Всі категорії</option>
+                    {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {error && <p className="text-red-500 mt-4">{error}</p>}
@@ -78,7 +111,7 @@ const HomePage = () => {
                             onClick={() => handleSelectProduct(suggestion.name)} // Pass name or ID
                         >
                             <img
-                                src={suggestion.image_url || 'placeholder.jpg'}
+                                src={suggestion.image_url || "placeholder.jpg"}
                                 alt={suggestion.name}
                                 className="w-32 h-32 object-cover mb-4"
                             />
@@ -93,7 +126,7 @@ const HomePage = () => {
                 <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
                     <h2 className="text-2xl font-bold mb-4">{selectedProduct.name}</h2>
                     <img
-                        src={selectedProduct.image_url || 'placeholder.jpg'}
+                        src={selectedProduct.image_url || "placeholder.jpg"}
                         alt={selectedProduct.name}
                         className="w-full max-h-64 object-cover mb-4"
                     />

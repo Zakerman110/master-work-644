@@ -11,11 +11,12 @@ def get_product_suggestions(request):
     Retrieve product suggestions based on a search query.
     """
     query = request.GET.get('query', '')
+    category_id = request.GET.get('category_id', None)
     if not query:
         return Response({"error": "Query parameter is required."}, status=400)
 
     # Get product suggestions from scraper_manager
-    suggestions = scraper_manager.get_product_suggestions(query)
+    suggestions = scraper_manager.get_product_suggestions(query, category_id)
 
     # Serialize suggestions
     serialized_suggestions = ProductSerializer(suggestions, many=True)
@@ -62,4 +63,24 @@ def get_reviews_for_product(request, product_id):
         return Response(reviews_data)
     except Product.DoesNotExist:
         return Response({"error": "Product not found."}, status=404)
+
+
+@api_view(['GET'])
+def get_rozetka_categories(request):
+    """
+    Return a list of available Rozetka categories.
+    """
+    categories = [{"name": name, "id": id} for name, id in ROZETKA_CATEGORIES.items()]
+    return Response(categories)
+
+
+ROZETKA_CATEGORIES = {
+    "Ноутбуки": 80004,
+    "Мобільні телефони": 80003,
+    "Монітори": 80089,
+    "Комп'ютерні комплектуючі": 80026,
+    "Телевізори": 80037,
+    "Планшети": 130309,
+    "Повербанки та зарядні станції": 4674582,
+}
 
