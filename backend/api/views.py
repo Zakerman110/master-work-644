@@ -4,6 +4,7 @@ from api.scrapers import scraper_manager
 from api.models import Product
 from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer
 from api.utils.category_utils import ROZETKA_CATEGORIES
+from api.sentiment.sentiment_model import predict_sentiment
 
 
 @api_view(['GET'])
@@ -43,10 +44,11 @@ def get_product_details(request):
     serialized_product = DetailedProductSerializer(product)
     return Response(serialized_product.data)
 
+
 @api_view(['GET'])
 def get_reviews_for_product(request, product_id):
     """
-    Retrieve all reviews for a product, grouped by its sources.
+    Retrieve all reviews for a product, grouped by its sources, with sentiment analysis.
     """
     try:
         product = Product.objects.get(id=product_id)
@@ -56,6 +58,11 @@ def get_reviews_for_product(request, product_id):
         for source in sources:
             reviews = source.reviews.all()
             serialized_reviews = ReviewSerializer(reviews, many=True).data
+
+            # TODO: save sentiment analysis to database
+            for review in serialized_reviews:
+                review['sentiment'] = predict_sentiment(review['text'])
+
             reviews_data.append({
                 "marketplace": source.marketplace,
                 "reviews": serialized_reviews

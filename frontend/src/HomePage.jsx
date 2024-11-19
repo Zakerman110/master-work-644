@@ -65,7 +65,7 @@ const HomePage = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            <h1 className="text-4xl font-bold text-center mb-8">Search for a Product</h1>
+            <h1 className="text-4xl font-bold text-center mb-8">Пошук продукту</h1>
             <div className="flex flex-col w-full max-w-2xl">
                 {/* Search Bar */}
                 <div className="flex mb-4">
@@ -73,14 +73,14 @@ const HomePage = () => {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Type product name..."
+                        placeholder="Введіть назву продукту..."
                         className="flex-grow p-3 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                         onClick={handleSearch}
                         className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600"
                     >
-                        Search
+                        Пошук
                     </button>
                 </div>
 
@@ -152,8 +152,27 @@ const HomePage = () => {
                             <h4 className="text-lg font-bold mb-2">{sourceReviews.marketplace}</h4>
                             <ul className="list-disc list-inside">
                                 {sourceReviews.reviews.map((review, i) => (
-                                    <li key={i}>
+                                    <li key={i} className="mb-2">
                                         <strong>{review.rating} Stars:</strong> {review.text}
+                                        <span
+                                            className="ml-2 px-2 py-1 text-sm rounded-full"
+                                            style={{
+                                                backgroundColor:
+                                                    review.sentiment === 'Positive'
+                                                        ? '#d4edda'
+                                                        : review.sentiment === 'Negative'
+                                                        ? '#f8d7da'
+                                                        : '#fff3cd',
+                                                color:
+                                                    review.sentiment === 'Positive'
+                                                        ? '#155724'
+                                                        : review.sentiment === 'Negative'
+                                                        ? '#721c24'
+                                                        : '#856404',
+                                            }}
+                                        >
+                                            {review.sentiment}
+                                        </span>
                                     </li>
                                 ))}
                             </ul>
