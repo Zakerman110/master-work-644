@@ -6,13 +6,13 @@ const HomePage = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [reviewsBySource, setReviewsBySource] = useState([]);
+    const [metrics, setMetrics] = useState(null);
     const [error, setError] = useState("");
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState("");
-    const [currentPage, setCurrentPage] = useState(1); // Track the current page
-    const [totalPages, setTotalPages] = useState(0); // Track the total pages
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
 
-    // Fetch categories when the component mounts
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -26,6 +26,33 @@ const HomePage = () => {
         fetchCategories();
     }, []);
 
+    const calculateMetrics = (reviews) => {
+        let positiveCount = 0;
+        let neutralCount = 0;
+        let negativeCount = 0;
+        let totalRating = 0;
+        let totalReviews = 0;
+
+        reviews.forEach((source) => {
+            source.reviews.forEach((review) => {
+                totalRating += review.rating;
+                totalReviews++;
+                if (review.sentiment === "Positive") positiveCount++;
+                else if (review.sentiment === "Neutral") neutralCount++;
+                else if (review.sentiment === "Negative") negativeCount++;
+            });
+        });
+
+        const overallScore = totalReviews > 0 ? (totalRating / totalReviews).toFixed(2) : "N/A";
+
+        return {
+            positiveCount,
+            neutralCount,
+            negativeCount,
+            overallScore,
+        };
+    };
+
     const handleSearch = async (page = 1) => {
         try {
             setError("");
@@ -36,13 +63,13 @@ const HomePage = () => {
                 params: {
                     query: searchTerm,
                     category_id: selectedCategory,
-                    page: page, // Send the current page as a query parameter
+                    page: page,
                 },
             });
 
-            setSuggestions(response.data.results); // Paginated results
-            setTotalPages(Math.ceil(response.data.count / 21)); // Assuming default page size of 10
-            setCurrentPage(page); // Update current page
+            setSuggestions(response.data.results);
+            setTotalPages(Math.ceil(response.data.count / 21));
+            setCurrentPage(page);
         } catch (err) {
             setError("Error fetching suggestions.");
             console.error(err);
@@ -54,9 +81,10 @@ const HomePage = () => {
             setError("");
             setSelectedProduct(null);
             setReviewsBySource([]);
+            setMetrics(null);
 
             const productResponse = await apiClient.get(`/api/product/`, {
-                params: { name: productId }, // Assuming the API accepts the product name
+                params: { name: productId },
             });
 
             const product = productResponse.data;
@@ -65,6 +93,10 @@ const HomePage = () => {
             // Fetch reviews for the selected product
             const reviewsResponse = await apiClient.get(`/api/product/${product.id}/reviews/`);
             setReviewsBySource(reviewsResponse.data);
+
+            // Calculate metrics
+            const calculatedMetrics = calculateMetrics(reviewsResponse.data);
+            setMetrics(calculatedMetrics);
         } catch (err) {
             setError("Error fetching product details or reviews.");
             console.error(err);
@@ -72,7 +104,7 @@ const HomePage = () => {
     };
 
     const handlePageChange = (page) => {
-        handleSearch(page); // Trigger search with the new page
+        handleSearch(page);
     };
 
     return (
@@ -89,7 +121,7 @@ const HomePage = () => {
                         className="flex-grow p-3 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
-                        onClick={() => handleSearch(1)} // Reset to page 1 on new search
+                        onClick={() => handleSearch(1)}
                         className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600"
                     >
                         Пошук
@@ -123,7 +155,7 @@ const HomePage = () => {
                                 className={`flex flex-col items-center bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg ${
                                     suggestion.is_detailed ? "border-green-500 border-2" : "border-gray-300"
                                 }`}
-                                onClick={() => handleSelectProduct(suggestion.name)} // Pass name or ID
+                                onClick={() => handleSelectProduct(suggestion.name)}
                             >
                                 <img
                                     src={suggestion.image_url || "placeholder.jpg"}
@@ -171,6 +203,28 @@ const HomePage = () => {
                         className="w-full max-h-64 object-cover mb-4"
                     />
                     <p className="text-gray-700 mb-4">{selectedProduct.description}</p>
+
+                    {/* Metrics Section */}
+                    {metrics && (
+                        <div className="mb-6">
+                            <h3 className="text-xl font-bold mb-4">Metrics</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <p className="text-gray-700">
+                                    <strong>Positive Reviews:</strong> {metrics.positiveCount}
+                                </p>
+                                <p className="text-gray-700">
+                                    <strong>Neutral Reviews:</strong> {metrics.neutralCount}
+                                </p>
+                                <p className="text-gray-700">
+                                    <strong>Negative Reviews:</strong> {metrics.negativeCount}
+                                </p>
+                                <p className="text-gray-700">
+                                    <strong>Overall Score:</strong> {metrics.overallScore}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <h3 className="text-xl font-bold mb-2">Sources</h3>
                     <ul className="list-disc list-inside mb-4">
                         {selectedProduct.sources.map((source) => (
