@@ -1,5 +1,7 @@
 from api.models import Product, ProductSource, Review
 from datetime import datetime
+
+from api.sentiment.sentiment_model import predict_sentiment
 from backend.logger import logger
 
 
@@ -32,6 +34,7 @@ def save_product_to_db(product_data, product_id):
         Review(
             product_source=source,
             text=review['text'],
+            sentiment=predict_sentiment(review['text']),
             rating=review['rating']
         )
         for review in product_data.get('reviews', [])

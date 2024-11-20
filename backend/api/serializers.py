@@ -13,13 +13,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'image_url', 'sources']
+        fields = ['id', 'name', 'category', 'image_url', 'is_detailed', 'sources']
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['text', 'rating']
+        fields = ['text', 'sentiment', 'rating']
 
 
 class DetailedProductSerializer(serializers.ModelSerializer):

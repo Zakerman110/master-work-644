@@ -1,4 +1,5 @@
 from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from api.scrapers import scraper_manager
 from api.models import Product
@@ -20,9 +21,15 @@ def get_product_suggestions(request):
     # Get product suggestions from scraper_manager
     suggestions = scraper_manager.get_product_suggestions(query, category_id)
 
-    # Serialize suggestions
-    serialized_suggestions = ProductSerializer(suggestions, many=True)
-    return Response(serialized_suggestions.data)
+    paginator = PageNumberPagination()
+    paginator.page_size = 21
+    paginated_suggestions = paginator.paginate_queryset(suggestions, request)
+
+    # Serialize paginated suggestions
+    serialized_suggestions = ProductSerializer(paginated_suggestions, many=True)
+
+    # Return paginated response
+    return paginator.get_paginated_response(serialized_suggestions.data)
 
 
 @api_view(['GET'])
@@ -58,10 +65,6 @@ def get_reviews_for_product(request, product_id):
         for source in sources:
             reviews = source.reviews.all()
             serialized_reviews = ReviewSerializer(reviews, many=True).data
-
-            # TODO: save sentiment analysis to database
-            for review in serialized_reviews:
-                review['sentiment'] = predict_sentiment(review['text'])
 
             reviews_data.append({
                 "marketplace": source.marketplace,

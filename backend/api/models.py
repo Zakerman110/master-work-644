@@ -28,6 +28,7 @@ class ProductSource(models.Model):
 class Review(models.Model):
     product_source = models.ForeignKey(ProductSource, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
+    sentiment = models.TextField()
     rating = models.FloatField()
 
     def __str__(self):
