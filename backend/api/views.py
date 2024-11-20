@@ -1,8 +1,9 @@
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from api.scrapers import scraper_manager
-from api.models import Product, Review
+from api.models import Product, Review, ProductSource
 from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer
 from api.utils.category_utils import ROZETKA_CATEGORIES
 from api.sentiment.sentiment_model import predict_sentiment
@@ -129,4 +130,39 @@ def update_review_sentiment(request, review_id):
         return Response({"message": "Review sentiment updated successfully."})
     except Review.DoesNotExist:
         return Response({"error": "Review not found."}, status=404)
+
+
+@api_view(['POST'])
+def add_user_review(request, product_id):
+    """
+    Add a user-generated review for a specific product.
+    """
+    try:
+        product = Product.objects.get(id=product_id)
+        data = request.data
+
+        # Create a ProductSource for user-generated reviews if it doesn't exist
+        source, created = ProductSource.objects.get_or_create(
+            product=product,
+            marketplace="self",  # Indicating that this is user-generated
+            defaults={
+                'url': '',  # Not applicable for user-generated reviews
+                'price': None,  # Not applicable
+            },
+        )
+
+        # Add the user review
+        Review.objects.create(
+            product_source=source,
+            text=data.get('text'),
+            rating=data.get('rating'),
+            model_sentiment=predict_sentiment(data.get('text'))
+        )
+
+        return Response({"message": "Review added successfully!"}, status=status.HTTP_201_CREATED)
+
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

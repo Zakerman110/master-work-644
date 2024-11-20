@@ -12,6 +12,8 @@ const HomePage = () => {
     const [selectedCategory, setSelectedCategory] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
+    const [userReview, setUserReview] = useState("");
+    const [userRating, setUserRating] = useState(0);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -110,6 +112,31 @@ const HomePage = () => {
         } catch (err) {
             setError("Error fetching product details or reviews.");
             console.error(err);
+        }
+    };
+
+    const handleAddReview = async () => {
+        try {
+            if (!userReview || userRating <= 0) {
+                alert("Please provide a valid comment and rating.");
+                return;
+            }
+
+            await apiClient.post(`/api/product/${selectedProduct.id}/add-review/`, {
+                text: userReview,
+                rating: userRating,
+            });
+
+            alert("Your review has been submitted!");
+            setUserReview("");
+            setUserRating(0);
+
+            // Refresh reviews to include the newly added review
+            const reviewsResponse = await apiClient.get(`/api/product/${selectedProduct.id}/reviews/`);
+            setReviewsBySource(reviewsResponse.data);
+        } catch (err) {
+            console.error("Error adding review:", err);
+            alert("Failed to submit your review.");
         }
     };
 
@@ -302,6 +329,36 @@ const HomePage = () => {
                             </div>
                         </div>
                     ))}
+                    <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
+                        <h3 className="text-xl font-bold mb-4">Додати відгук</h3>
+                        <textarea
+                            value={userReview}
+                            onChange={(e) => setUserReview(e.target.value)}
+                            placeholder="Напишість свій коментарій..."
+                            className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="flex items-center mb-4">
+                            <label className="mr-4 text-lg">Оцінка:</label>
+                            <select
+                                value={userRating}
+                                onChange={(e) => setUserRating(parseFloat(e.target.value))}
+                                className="p-2 border border-gray-300 rounded"
+                            >
+                                <option value={0}>Вибір</option>
+                                {[1, 2, 3, 4, 5].map((rating) => (
+                                    <option key={rating} value={rating}>
+                                        {rating} Star{rating > 1 ? "s" : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            onClick={handleAddReview}
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Залишити відгук
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
