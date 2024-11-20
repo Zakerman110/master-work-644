@@ -59,5 +59,6 @@ def predict_sentiment(review):
     review_seq = tokenizer.texts_to_sequences([cleaned_review])
     review_padded = pad_sequences(review_seq, maxlen=32, padding='post', truncating='post')
     lstm_pred = lstm_model.predict(review_padded)
+    confidence = max(lstm_pred[0])
     lstm_sentiment = label_encoder.inverse_transform(np.argmax(lstm_pred, axis=1))
-    return lstm_sentiment[0]
+    return lstm_sentiment[0], confidence

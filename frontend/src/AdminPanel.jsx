@@ -7,6 +7,9 @@ const AdminPanel = () => {
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
+    const [reviewMode, setReviewMode] = useState("marked"); // Default mode is "marked"
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.6); // Default threshold
+
 
     useEffect(() => {
         fetchReviews(currentPage);
@@ -17,7 +20,11 @@ const AdminPanel = () => {
         setError("");
         try {
             const response = await apiClient.get(`/api/admin/reviews/`, {
-                params: { page },
+                params: {
+                    page,
+                    mode: reviewMode,
+                    confidence_threshold: reviewMode === "low_confidence" ? confidenceThreshold : undefined,
+                },
             });
             setReviews(response.data.results);
             setTotalPages(Math.ceil(response.data.count / 21));
@@ -53,6 +60,56 @@ const AdminPanel = () => {
             {loading && <p>Завантаження відгуків...</p>}
             {error && <p className="text-red-500">{error}</p>}
 
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <button
+                        onClick={() => {
+                            setReviewMode("marked");
+                            setCurrentPage(1);
+                            fetchReviews(1);
+                        }}
+                        className={`px-4 py-2 mr-2 rounded text-white ${
+                            reviewMode === "marked" ? "bg-blue-500" : "bg-gray-300 hover:bg-gray-400"
+                        }`}
+                    >
+                        Marked for Review
+                    </button>
+                    <button
+                        onClick={() => {
+                            setReviewMode("low_confidence");
+                            setCurrentPage(1);
+                            fetchReviews(1);
+                        }}
+                        className={`px-4 py-2 rounded text-white ${
+                            reviewMode === "low_confidence" ? "bg-blue-500" : "bg-gray-300 hover:bg-gray-400"
+                        }`}
+                    >
+                        Low Confidence
+                    </button>
+                </div>
+
+                {reviewMode === "low_confidence" && (
+                    <div className="flex items-center">
+                        <label className="mr-2 text-gray-700">Confidence Threshold:</label>
+                        <input
+                            type="number"
+                            value={confidenceThreshold}
+                            onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
+                            step="0.1"
+                            min="0"
+                            max="1"
+                            className="w-20 p-2 border border-gray-300 rounded"
+                        />
+                        <button
+                            onClick={() => fetchReviews(1)}
+                            className="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                            Apply
+                        </button>
+                    </div>
+                )}
+            </div>
+            
             {!loading && reviews.length === 0 && <p>Ніякі відгуки не потребують розгляду.</p>}
 
             {reviews.length > 0 && (
@@ -64,16 +121,21 @@ const AdminPanel = () => {
                                 className="bg-white shadow-md rounded-lg p-4 flex flex-col gap-4"
                             >
                                 <p>
-                                    <strong>Відгук:</strong> {review.text}
+                                    <strong>Review:</strong> {review.text}
                                 </p>
                                 <p>
-                                    <strong>Оцінка:</strong> {review.rating}
+                                    <strong>Rating:</strong> {review.rating}
                                 </p>
                                 <p>
-                                    <strong>Настрій моделі:</strong> {review.model_sentiment}
+                                    <strong>Model Sentiment:</strong> {review.model_sentiment}
                                 </p>
+                                {reviewMode === "low_confidence" && (
+                                    <p>
+                                        <strong>Confidence:</strong> {review.confidence.toFixed(2)}
+                                    </p>
+                                )}
                                 <div>
-                                    <strong>Оновлення настрою:</strong>
+                                    <strong>Update Sentiment:</strong>
                                     <div className="flex gap-2 mt-2">
                                         {["Positive", "Neutral", "Negative"].map((sentiment) => (
                                             <button
@@ -83,8 +145,8 @@ const AdminPanel = () => {
                                                     sentiment === "Positive"
                                                         ? "bg-green-500 hover:bg-green-600"
                                                         : sentiment === "Neutral"
-                                                        ? "bg-yellow-500 hover:bg-yellow-600"
-                                                        : "bg-red-500 hover:bg-red-600"
+                                                            ? "bg-yellow-500 hover:bg-yellow-600"
+                                                            : "bg-red-500 hover:bg-red-600"
                                                 }`}
                                             >
                                                 {sentiment}

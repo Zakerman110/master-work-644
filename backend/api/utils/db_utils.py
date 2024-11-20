@@ -30,16 +30,19 @@ def save_product_to_db(product_data, product_id):
         source.reviews.values_list('text', flat=True)
     )  # Use 'text' as a unique identifier for simplicity (can be enhanced)
 
-    new_reviews = [
-        Review(
-            product_source=source,
-            text=review['text'],
-            model_sentiment=predict_sentiment(review['text']),
-            rating=review['rating']
-        )
-        for review in product_data.get('reviews', [])
-        if review['text'] not in existing_reviews  # Avoid duplicates
-    ]
+    new_reviews = []
+    for review in product_data.get('reviews', []):
+        if review['text'] not in existing_reviews:
+            sentiment, confidence = predict_sentiment(review['text'])
+            new_reviews.append(
+                Review(
+                    product_source=source,
+                    text=review['text'],
+                    model_sentiment=sentiment,
+                    confidence=confidence,
+                    rating=review['rating']
+                )
+            )
 
     if new_reviews:
         Review.objects.bulk_create(new_reviews)

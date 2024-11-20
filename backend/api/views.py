@@ -100,16 +100,16 @@ def mark_review_for_review(request, review_id):
         return Response({"error": "Review not found."}, status=404)
 
 
-@api_view(['GET'])
-def list_reviews_needing_review(request):
-    """
-    List reviews marked for admin review.
-    """
-    reviews = Review.objects.filter(needs_review=True)
-    paginator = PageNumberPagination()
-    paginated_reviews = paginator.paginate_queryset(reviews, request)
-    serialized_reviews = ReviewSerializer(paginated_reviews, many=True)
-    return paginator.get_paginated_response(serialized_reviews.data)
+# @api_view(['GET'])
+# def list_reviews_needing_review(request):
+#     """
+#     List reviews marked for admin review.
+#     """
+#     reviews = Review.objects.filter(needs_review=True)
+#     paginator = PageNumberPagination()
+#     paginated_reviews = paginator.paginate_queryset(reviews, request)
+#     serialized_reviews = ReviewSerializer(paginated_reviews, many=True)
+#     return paginator.get_paginated_response(serialized_reviews.data)
 
 
 @api_view(['POST'])
@@ -152,11 +152,13 @@ def add_user_review(request, product_id):
         )
 
         # Add the user review
+        sentiment, confidence = predict_sentiment(data.get('text'))
         Review.objects.create(
             product_source=source,
             text=data.get('text'),
             rating=data.get('rating'),
-            model_sentiment=predict_sentiment(data.get('text'))
+            model_sentiment=sentiment,
+            confidence=confidence
         )
 
         return Response({"message": "Review added successfully!"}, status=status.HTTP_201_CREATED)
@@ -166,3 +168,37 @@ def add_user_review(request, product_id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ReviewPagination(PageNumberPagination):
+    page_size = 21
+    page_size_query_param = 'page_size'
+
+
+@api_view(['GET'])
+def list_reviews_needing_review(request):
+    """
+    Retrieve reviews marked for review or with low confidence.
+    Query parameter `confidence_threshold` can be provided, default is 0.6.
+    """
+    confidence_threshold = float(request.GET.get('confidence_threshold', 0.6))
+    mode = request.GET.get('mode', 'marked')  # 'marked' or 'low_confidence'
+
+    if mode == 'marked':
+        reviews = Review.objects.filter(needs_review=True)
+    elif mode == 'low_confidence':
+        reviews = Review.objects.filter(confidence__lt=confidence_threshold, human_sentiment__isnull=True)
+    else:
+        return Response({"error": "Invalid mode provided. Use 'marked' or 'low_confidence'."}, status=400)
+
+    paginator = ReviewPagination()
+    result_page = paginator.paginate_queryset(reviews, request)
+    return paginator.get_paginated_response([
+        {
+            "id": review.id,
+            "text": review.text,
+            "rating": review.rating,
+            "model_sentiment": review.model_sentiment,
+            "confidence": review.confidence,
+        }
+        for review in result_page
+    ])

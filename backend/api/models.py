@@ -30,6 +30,7 @@ class Review(models.Model):
     text = models.TextField()
     rating = models.FloatField()
     model_sentiment = models.CharField(max_length=50, default="Neutral")  # Predicted sentiment
+    confidence = models.FloatField()
     human_sentiment = models.CharField(max_length=50, null=True, blank=True)  # Corrected sentiment
     needs_review = models.BooleanField(default=False)  # Mark for admin review
 
