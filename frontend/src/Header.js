@@ -5,12 +5,12 @@ const Header = () => (
         <ul className="flex justify-between">
             <li>
                 <Link to="/" className="hover:underline">
-                    Home
+                    Головна
                 </Link>
             </li>
             <li>
                 <Link to="/admin" className="hover:underline">
-                    Admin Panel
+                    Панель Адміна
                 </Link>
             </li>
         </ul>

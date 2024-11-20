@@ -48,12 +48,12 @@ const AdminPanel = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 p-4">
-            <h1 className="text-4xl font-bold text-center mb-8">Admin Panel - Review Sentiments</h1>
+            <h1 className="text-4xl font-bold text-center mb-8">Панель Адміна - Перегляд Відгуків</h1>
 
-            {loading && <p>Loading reviews...</p>}
+            {loading && <p>Завантаження відгуків...</p>}
             {error && <p className="text-red-500">{error}</p>}
 
-            {!loading && reviews.length === 0 && <p>No reviews need attention.</p>}
+            {!loading && reviews.length === 0 && <p>Ніякі відгуки не потребують розгляду.</p>}
 
             {reviews.length > 0 && (
                 <div>
@@ -64,16 +64,16 @@ const AdminPanel = () => {
                                 className="bg-white shadow-md rounded-lg p-4 flex flex-col gap-4"
                             >
                                 <p>
-                                    <strong>Review:</strong> {review.text}
+                                    <strong>Відгук:</strong> {review.text}
                                 </p>
                                 <p>
-                                    <strong>Rating:</strong> {review.rating}
+                                    <strong>Оцінка:</strong> {review.rating}
                                 </p>
                                 <p>
-                                    <strong>Model Sentiment:</strong> {review.model_sentiment}
+                                    <strong>Настрій моделі:</strong> {review.model_sentiment}
                                 </p>
                                 <div>
-                                    <strong>Update Sentiment:</strong>
+                                    <strong>Оновлення настрою:</strong>
                                     <div className="flex gap-2 mt-2">
                                         {["Positive", "Neutral", "Negative"].map((sentiment) => (
                                             <button

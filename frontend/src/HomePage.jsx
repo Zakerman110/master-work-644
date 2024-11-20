@@ -217,25 +217,25 @@ const HomePage = () => {
                     {/* Metrics Section */}
                     {metrics && (
                         <div className="mb-6">
-                            <h3 className="text-xl font-bold mb-4">Metrics</h3>
+                            <h3 className="text-xl font-bold mb-4">Метрики</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <p className="text-gray-700">
-                                    <strong>Positive Reviews:</strong> {metrics.positiveCount}
+                                    <strong>Позитивні відгуки:</strong> {metrics.positiveCount}
                                 </p>
                                 <p className="text-gray-700">
-                                    <strong>Neutral Reviews:</strong> {metrics.neutralCount}
+                                    <strong>Нейтральні відгуки:</strong> {metrics.neutralCount}
                                 </p>
                                 <p className="text-gray-700">
-                                    <strong>Negative Reviews:</strong> {metrics.negativeCount}
+                                    <strong>Негативні відгуки:</strong> {metrics.negativeCount}
                                 </p>
                                 <p className="text-gray-700">
-                                    <strong>Overall Score:</strong> {metrics.overallScore}
+                                    <strong>Загальна оцінка:</strong> {metrics.overallScore}
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <h3 className="text-xl font-bold mb-2">Sources</h3>
+                    <h3 className="text-xl font-bold mb-2">Джерела</h3>
                     <ul className="list-disc list-inside mb-4">
                         {selectedProduct.sources.map((source) => (
                             <li key={source.marketplace}>
@@ -250,52 +250,56 @@ const HomePage = () => {
                             </li>
                         ))}
                     </ul>
-                    <h3 className="text-xl font-bold mb-2">Reviews by Source</h3>
+                    <h3 className="text-xl font-bold mb-2">Відгуки по Джерелам</h3>
                     {reviewsBySource.map((sourceReviews, index) => (
-                        <div key={index} className="mb-4">
-                            <h4 className="text-lg font-bold mb-2">{sourceReviews.marketplace}</h4>
-                            <ul className="list-disc list-inside">
+                        <div key={index} className="mb-8">
+                            <h4 className="text-xl font-bold mb-4">{sourceReviews.marketplace}</h4>
+                            <div className="flex flex-col gap-4">
                                 {sourceReviews.reviews.map((review, i) => {
                                     const sentiment = review.human_sentiment || review.model_sentiment;
                                     const isVerified = Boolean(review.human_sentiment);
 
                                     return (
-                                        <li key={i} className="mb-2">
-                                            <strong>{review.rating} Stars:</strong> {review.text}
-                                            <span
-                                                className="ml-2 px-2 py-1 text-sm rounded-full"
-                                                style={{
-                                                    backgroundColor:
-                                                        sentiment === "Positive"
-                                                            ? "#d4edda"
-                                                            : sentiment === "Negative"
-                                                            ? "#f8d7da"
-                                                            : "#fff3cd",
-                                                    color:
-                                                        sentiment === "Positive"
-                                                            ? "#155724"
-                                                            : sentiment === "Negative"
-                                                            ? "#721c24"
-                                                            : "#856404",
-                                                }}
-                                            >
-                                                {sentiment}
-                                            </span>
-                                            {isVerified && (
-                                                <span className="ml-2 px-2 py-1 text-sm bg-green-100 text-green-700 rounded-full">
-                                                    Verified
-                                                </span>
-                                            )}
-                                            <button
-                                                onClick={() => markReviewForReview(review.id)}
-                                                className="ml-4 px-2 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
-                                            >
-                                                Mark for Review
-                                            </button>
-                                        </li>
+                                        <div
+                                            key={i}
+                                            className="p-4 bg-white rounded-lg shadow-md border border-gray-200"
+                                        >
+                                            <p className="text-gray-800 font-medium mb-2">
+                                                <strong>{review.rating} Stars</strong>
+                                            </p>
+                                            <p className="text-gray-600 text-sm mb-4">{review.text}</p>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                <span
+                                    className={`px-3 py-1 rounded-full text-sm ${
+                                        sentiment === "Positive"
+                                            ? "bg-green-100 text-green-700"
+                                            : sentiment === "Negative"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-yellow-100 text-yellow-700"
+                                    }`}
+                                >
+                                    {sentiment}
+                                </span>
+                                                    {isVerified && (
+                                                        <span className="ml-2 px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
+                                        Підтверджено
+                                    </span>
+                                                    )}
+                                                </div>
+                                                {!isVerified && (
+                                                    <button
+                                                    onClick={() => markReviewForReview(review.id)}
+                                                    className="px-3 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
+                                                >
+                                                    Позначити для Розгляду
+                                                </button>
+                                                    )}
+                                            </div>
+                                        </div>
                                     );
                                 })}
-                            </ul>
+                            </div>
                         </div>
                     ))}
                 </div>
