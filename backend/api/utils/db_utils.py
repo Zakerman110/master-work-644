@@ -34,7 +34,7 @@ def save_product_to_db(product_data, product_id):
         Review(
             product_source=source,
             text=review['text'],
-            sentiment=predict_sentiment(review['text']),
+            model_sentiment=predict_sentiment(review['text']),
             rating=review['rating']
         )
         for review in product_data.get('reviews', [])

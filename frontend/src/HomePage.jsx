@@ -37,9 +37,10 @@ const HomePage = () => {
             source.reviews.forEach((review) => {
                 totalRating += review.rating;
                 totalReviews++;
-                if (review.sentiment === "Positive") positiveCount++;
-                else if (review.sentiment === "Neutral") neutralCount++;
-                else if (review.sentiment === "Negative") negativeCount++;
+                const sentiment = review.human_sentiment || review.model_sentiment;
+                if (sentiment === "Positive") positiveCount++;
+                else if (sentiment === "Neutral") neutralCount++;
+                else if (sentiment === "Negative") negativeCount++;
             });
         });
 
@@ -51,6 +52,15 @@ const HomePage = () => {
             negativeCount,
             overallScore,
         };
+    };
+
+    const markReviewForReview = async (reviewId) => {
+        try {
+            await apiClient.post(`/api/reviews/${reviewId}/mark-for-review/`);
+            alert("Review marked for admin review.");
+        } catch (err) {
+            console.error("Error marking review for review:", err);
+        }
     };
 
     const handleSearch = async (page = 1) => {
@@ -245,30 +255,46 @@ const HomePage = () => {
                         <div key={index} className="mb-4">
                             <h4 className="text-lg font-bold mb-2">{sourceReviews.marketplace}</h4>
                             <ul className="list-disc list-inside">
-                                {sourceReviews.reviews.map((review, i) => (
-                                    <li key={i} className="mb-2">
-                                        <strong>{review.rating} Stars:</strong> {review.text}
-                                        <span
-                                            className="ml-2 px-2 py-1 text-sm rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    review.sentiment === "Positive"
-                                                        ? "#d4edda"
-                                                        : review.sentiment === "Negative"
-                                                        ? "#f8d7da"
-                                                        : "#fff3cd",
-                                                color:
-                                                    review.sentiment === "Positive"
-                                                        ? "#155724"
-                                                        : review.sentiment === "Negative"
-                                                        ? "#721c24"
-                                                        : "#856404",
-                                            }}
-                                        >
-                                            {review.sentiment}
-                                        </span>
-                                    </li>
-                                ))}
+                                {sourceReviews.reviews.map((review, i) => {
+                                    const sentiment = review.human_sentiment || review.model_sentiment;
+                                    const isVerified = Boolean(review.human_sentiment);
+
+                                    return (
+                                        <li key={i} className="mb-2">
+                                            <strong>{review.rating} Stars:</strong> {review.text}
+                                            <span
+                                                className="ml-2 px-2 py-1 text-sm rounded-full"
+                                                style={{
+                                                    backgroundColor:
+                                                        sentiment === "Positive"
+                                                            ? "#d4edda"
+                                                            : sentiment === "Negative"
+                                                            ? "#f8d7da"
+                                                            : "#fff3cd",
+                                                    color:
+                                                        sentiment === "Positive"
+                                                            ? "#155724"
+                                                            : sentiment === "Negative"
+                                                            ? "#721c24"
+                                                            : "#856404",
+                                                }}
+                                            >
+                                                {sentiment}
+                                            </span>
+                                            {isVerified && (
+                                                <span className="ml-2 px-2 py-1 text-sm bg-green-100 text-green-700 rounded-full">
+                                                    Verified
+                                                </span>
+                                            )}
+                                            <button
+                                                onClick={() => markReviewForReview(review.id)}
+                                                className="ml-4 px-2 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
+                                            >
+                                                Mark for Review
+                                            </button>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     ))}

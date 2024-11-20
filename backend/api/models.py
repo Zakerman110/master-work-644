@@ -28,8 +28,10 @@ class ProductSource(models.Model):
 class Review(models.Model):
     product_source = models.ForeignKey(ProductSource, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
-    sentiment = models.TextField()
     rating = models.FloatField()
+    model_sentiment = models.CharField(max_length=50, default="Neutral")  # Predicted sentiment
+    human_sentiment = models.CharField(max_length=50, null=True, blank=True)  # Corrected sentiment
+    needs_review = models.BooleanField(default=False)  # Mark for admin review
 
     def __str__(self):
         return f"Review for {self.product_source.product.name} on {self.product_source.marketplace}"
