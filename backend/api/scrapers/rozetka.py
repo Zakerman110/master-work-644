@@ -50,7 +50,11 @@ def scrape_rozetka_suggestions(product_name, category_id=None):
             suggestions = get_catalog_grid_product(driver, key)
         else:
             for category_name, _ in ROZETKA_CATEGORIES.items():
-                category_link = wait.until(EC.presence_of_element_located((By.XPATH, f'//a[@data-test="filter-link" and ./span[.="{category_name}"]]')))
+                try:
+                    category_link = wait.until(EC.presence_of_element_located((By.XPATH, f'//a[@data-test="filter-link" and ./span[.="{category_name}"]]')))
+                except TimeoutException:
+                    logger.info(f"Category '{category_name}' is not present for search term '{product_name}', skipping...")
+                    continue
                 category_link.click()
                 time.sleep(2)
                 wait.until(EC.presence_of_element_located((By.XPATH, f'//li[contains(@class,"breadcrumbs__item ")]//span[.="{category_name}"]')))

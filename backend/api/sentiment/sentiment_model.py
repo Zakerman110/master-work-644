@@ -13,10 +13,10 @@ translator = Translator()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Load pre-trained models and utilities
-with open(os.path.join(BASE_DIR, 'tokenizer.pkl'), 'rb') as f:
+with open(os.path.join(BASE_DIR, 'tokenizer_balanced.pkl'), 'rb') as f:
     tokenizer = pickle.load(f)
 
-lstm_model = load_model(os.path.join(BASE_DIR, 'lstm_model.h5'))
+lstm_model = load_model(os.path.join(BASE_DIR, 'lstm_model_balanced.h5'))
 label_encoder = LabelEncoder()
 label_encoder.classes_ = np.load(os.path.join(BASE_DIR, 'classes.npy'), allow_pickle=True)
 

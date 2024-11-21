@@ -14,6 +14,7 @@ const HomePage = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [userReview, setUserReview] = useState("");
     const [userRating, setUserRating] = useState(0);
+    const [filterSentiment, setFilterSentiment] = useState("all");
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -278,57 +279,84 @@ const HomePage = () => {
                         ))}
                     </ul>
                     <h3 className="text-xl font-bold mb-2">Відгуки по Джерелам</h3>
-                    {reviewsBySource.map((sourceReviews, index) => (
-                        <div key={index} className="mb-8">
-                            <h4 className="text-xl font-bold mb-4">{sourceReviews.marketplace}</h4>
-                            <div className="flex flex-col gap-4">
-                                {sourceReviews.reviews.map((review, i) => {
-                                    const sentiment = review.human_sentiment || review.model_sentiment;
-                                    const isVerified = Boolean(review.human_sentiment);
+                    <div className="mb-4 flex items-center gap-4">
+                        <label htmlFor="sentiment-filter" className="font-medium text-gray-700">
+                            Фільтрувати за Настроєм:
+                        </label>
+                        <select
+                            id="sentiment-filter"
+                            value={filterSentiment}
+                            onChange={(e) => setFilterSentiment(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="all">Усі</option>
+                            <option value="Positive">Позитивні</option>
+                            <option value="Neutral">Нейтральні</option>
+                            <option value="Negative">Негативні</option>
+                        </select>
+                    </div>
+                    {reviewsBySource.map((sourceReviews, index) => {
+                        const filteredReviews = sourceReviews.reviews.filter((review) => {
+                            const sentiment = review.human_sentiment || review.model_sentiment;
+                            return filterSentiment === "all" || sentiment === filterSentiment;
+                        });
 
-                                    return (
-                                        <div
-                                            key={i}
-                                            className="p-4 bg-white rounded-lg shadow-md border border-gray-200"
-                                        >
-                                            <p className="text-gray-800 font-medium mb-2">
-                                                <strong>{review.rating} Stars</strong>
-                                            </p>
-                                            <p className="text-gray-600 text-sm mb-4">{review.text}</p>
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                <span
-                                    className={`px-3 py-1 rounded-full text-sm ${
-                                        sentiment === "Positive"
-                                            ? "bg-green-100 text-green-700"
-                                            : sentiment === "Negative"
-                                                ? "bg-red-100 text-red-700"
-                                                : "bg-yellow-100 text-yellow-700"
-                                    }`}
-                                >
-                                    {sentiment}
-                                </span>
-                                                    {isVerified && (
-                                                        <span className="ml-2 px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
-                                        Підтверджено
-                                    </span>
-                                                    )}
-                                                </div>
-                                                {!isVerified && (
-                                                    <button
-                                                    onClick={() => markReviewForReview(review.id)}
-                                                    className="px-3 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
+                        return (
+                            <div key={index} className="mb-8">
+                                <h4 className="text-xl font-bold mb-4">{sourceReviews.marketplace}</h4>
+                                {filteredReviews.length > 0 ? (
+                                    <div className="flex flex-col gap-4">
+                                        {filteredReviews.map((review, i) => {
+                                            const sentiment = review.human_sentiment || review.model_sentiment;
+                                            const isVerified = Boolean(review.human_sentiment);
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="p-4 bg-white rounded-lg shadow-md border border-gray-200"
                                                 >
-                                                    Позначити для Розгляду
-                                                </button>
-                                                    )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                                    <p className="text-gray-800 font-medium mb-2">
+                                                        <strong>{review.rating} Stars</strong>
+                                                    </p>
+                                                    <p className="text-gray-600 text-sm mb-4">{review.text}</p>
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-sm ${
+                                                sentiment === "Positive"
+                                                    ? "bg-green-100 text-green-700"
+                                                    : sentiment === "Negative"
+                                                        ? "bg-red-100 text-red-700"
+                                                        : "bg-yellow-100 text-yellow-700"
+                                            }`}
+                                        >
+                                            {sentiment}
+                                        </span>
+                                                            {isVerified && (
+                                                                <span className="ml-2 px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
+                                                Підтверджено
+                                            </span>
+                                                            )}
+                                                        </div>
+                                                        {!isVerified && (
+                                                            <button
+                                                                onClick={() => markReviewForReview(review.id)}
+                                                                className="px-3 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
+                                                            >
+                                                                Позначити для Розгляду
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500">Немає відгуків для вибраного настрою.</p>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
                         <h3 className="text-xl font-bold mb-4">Додати відгук</h3>
                         <textarea
