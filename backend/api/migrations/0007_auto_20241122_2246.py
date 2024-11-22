@@ -4,7 +4,7 @@ from django.db import migrations
 
 
 def populate_ml_models(apps, schema_editor):
-    MLModel = apps.get_model('your_app_name', 'MLModel')
+    MLModel = apps.get_model('api', 'MLModel')
     MLModel.objects.bulk_create([
         MLModel(
             file_name="lstm_model.h5",
@@ -30,7 +30,7 @@ def populate_ml_models(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0006_mlmodel_review_linked_ml_model'),
+        ('api', '0006_mlmodel'),
     ]
 
     operations = [

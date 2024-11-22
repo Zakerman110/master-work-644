@@ -3,6 +3,7 @@ import apiClient from "./axiosConfig";
 
 const ModelsPanel = () => {
     const [models, setModels] = useState([]);
+    const [unassociatedReviewsCount, setUnassociatedReviewsCount] = useState(0);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -12,7 +13,8 @@ const ModelsPanel = () => {
     const fetchModels = async () => {
         try {
             const response = await apiClient.get("/api/admin/models/");
-            setModels(response.data);
+            setModels(response.data.models);
+            setUnassociatedReviewsCount(response.data.unassociated_reviews_count);
         } catch (err) {
             setError("Error fetching models.");
             console.error(err);
@@ -54,6 +56,12 @@ const ModelsPanel = () => {
 
             {error && <p className="text-red-500">{error}</p>}
 
+            <div className="mb-6">
+                <p className="text-lg font-bold">
+                    Загальна кількість неасоційованих відгуків: {unassociatedReviewsCount}
+                </p>
+            </div>
+
             <div className="grid grid-cols-1 gap-4">
                 {models.map((model) => (
                     <div
@@ -68,6 +76,8 @@ const ModelsPanel = () => {
                         <p><strong>Precision:</strong> {model.precision.toFixed(2)}</p>
                         <p><strong>Recall:</strong> {model.recall.toFixed(2)}</p>
                         <p><strong>F1-Score:</strong> {model.f1_score.toFixed(2)}</p>
+                        <p><strong>Кількість асоційованих відгуків:</strong> {model.associated_reviews_count}</p>
+                        <p><strong>Кількість нових відгуків:</strong> {model.new_reviews_count}</p>
                         <button
                             onClick={() => handleActivateModel(model.id)}
                             className={`px-4 py-2 mt-2 text-white rounded ${

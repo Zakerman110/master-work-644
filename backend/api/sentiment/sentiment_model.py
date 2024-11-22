@@ -21,6 +21,7 @@ with open(os.path.join(BASE_DIR, 'tokenizer_balanced.pkl'), 'rb') as f:
 try:
     active_model = MLModel.objects.get(is_active=True)
     lstm_model_path = os.path.join(BASE_DIR, active_model.file_name)
+    # lstm_model_path = os.path.join(BASE_DIR, 'lstm_model_balanced.h5')
     lstm_model = load_model(lstm_model_path)
     print(f"Loaded active model: {active_model.file_name}")
 except MLModel.DoesNotExist:

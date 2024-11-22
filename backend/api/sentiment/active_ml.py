@@ -20,20 +20,21 @@ from api.sentiment.sentiment_model import translate_to_english
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def train_new_model(reviews, labels):
+def train_new_model(reviews):
     """
-    Train a new LSTM model using the provided reviews and labels.
+    Train a new LSTM model using the provided reviews.
     Save the model and its tokenizer, and update the MLModel database.
     """
 
     existing_df = pd.read_csv(os.path.join(BASE_DIR, 'process_reviews.csv'))
 
-    translated_reviews = [translate_to_english(review) for review in reviews]
+    # Prepare review texts and labels
+    texts = [translate_to_english(review.text) for review in reviews]
+    labels = [review.human_sentiment for review in reviews]
 
-
-    # Load the new reviews
+    # Load the new reviews into DataFrame
     new_reviews = pd.DataFrame({
-        "reviews": translated_reviews,
+        "reviews": texts,
         "sentiment": labels
     })
 
@@ -44,9 +45,7 @@ def train_new_model(reviews, labels):
     # Encode sentiments in the new reviews using the existing LabelEncoder
     new_reviews['sentiment'] = label_encoder.transform(new_reviews['sentiment'])
 
-    # Add additional fields to the new reviews (optional)
-    # new_reviews['rating'] = [5, 1]
-    # new_reviews['polarity'] = [0.8, -0.5]
+    # Add additional fields to the new reviews
     new_reviews['review_len'] = new_reviews['reviews'].str.len()
     new_reviews['word_count'] = new_reviews['reviews'].str.split().str.len()
 
@@ -128,5 +127,8 @@ def train_new_model(reviews, labels):
         f1_score=f1,
         is_active=False  # Newly trained models are not active by default
     )
+
+    # Associate the reviews with the new model
+    ml_model.reviews.add(*[review.id for review in reviews])
 
     return ml_model

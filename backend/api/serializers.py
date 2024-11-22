@@ -28,13 +28,14 @@ class MLModelSerializer(serializers.ModelSerializer):
             "recall",
             "f1_score",
             "is_active",
+            'reviews',
         ]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['id', 'text', 'rating', 'model_sentiment', 'confidence', 'human_sentiment', 'needs_review', "linked_ml_model",]
+        fields = ['id', 'text', 'rating', 'model_sentiment', 'confidence', 'human_sentiment', 'needs_review',]
 
 
 class DetailedProductSerializer(serializers.ModelSerializer):

@@ -208,11 +208,37 @@ def list_reviews_needing_review(request):
 @api_view(['GET'])
 def list_ml_models(request):
     """
-    List all ML models with their metrics and status.
+    List all ML models with their metrics, status, and statistics.
     """
     models = MLModel.objects.all().order_by('-created_at')
-    serializer = MLModelSerializer(models, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    serialized_data = []
+
+    # Fetch all reviews
+    all_reviews = Review.objects.all()
+    unassociated_reviews_count = all_reviews.filter(
+        human_sentiment__isnull=False  # Reviewed by admin
+    ).exclude(
+        models__isnull=False  # Not associated with any MLModel
+    ).count()
+
+    for model in models:
+        # Count new reviews available for this model
+        associated_reviews_count = model.reviews.count()
+        new_reviews_count = all_reviews.filter(
+            human_sentiment__isnull=False  # Reviewed by admin
+        ).exclude(models=model).count()
+
+        # Add statistics to the serialized data
+        serialized_model = MLModelSerializer(model).data
+        serialized_model['associated_reviews_count'] = associated_reviews_count
+        serialized_model['new_reviews_count'] = new_reviews_count
+
+        serialized_data.append(serialized_model)
+
+    return Response({
+        'models': serialized_data,
+        'unassociated_reviews_count': unassociated_reviews_count
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -240,20 +266,20 @@ def train_model(request):
     Train a new sentiment analysis model using selected reviews.
     """
     try:
+        # Filter reviews with human_sentiment
         reviews = Review.objects.filter(human_sentiment__isnull=False)
-        texts = [review.text for review in reviews]
-        labels = [review.human_sentiment for review in reviews]
 
-        if not texts or not labels:
+        if not reviews.exists():
             return Response({"error": "No reviews available for training."}, status=status.HTTP_400_BAD_REQUEST)
 
-        ml_model = train_new_model(texts, labels)
+        # Train the new model and associate reviews
+        ml_model = train_new_model(reviews)
 
-        serialized_ml_model = MLModelSerializer(ml_model, many=True)
+        serialized_ml_model = MLModelSerializer(ml_model)
 
         return Response({
             "message": "Model training completed successfully.",
-            "data": serialized_ml_model
+            "data": serialized_ml_model.data
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
