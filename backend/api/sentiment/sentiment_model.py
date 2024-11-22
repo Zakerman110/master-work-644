@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from googletrans import Translator  # Import the translator
 
+from api.models import MLModel
 
 translator = Translator()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +17,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE_DIR, 'tokenizer_balanced.pkl'), 'rb') as f:
     tokenizer = pickle.load(f)
 
-lstm_model = load_model(os.path.join(BASE_DIR, 'lstm_model_balanced.h5'))
+# Load Active Model from Database
+try:
+    active_model = MLModel.objects.get(is_active=True)
+    lstm_model_path = os.path.join(BASE_DIR, active_model.file_name)
+    lstm_model = load_model(lstm_model_path)
+    print(f"Loaded active model: {active_model.file_name}")
+except MLModel.DoesNotExist:
+    raise Exception("No active model found in the database. Please activate a model.")
+
 label_encoder = LabelEncoder()
 label_encoder.classes_ = np.load(os.path.join(BASE_DIR, 'classes.npy'), allow_pickle=True)
 

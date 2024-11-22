@@ -25,6 +25,19 @@ class ProductSource(models.Model):
         return f"{self.marketplace} - {self.product.name}"
 
 
+class MLModel(models.Model):
+    file_name = models.CharField(max_length=255, unique=True)  # The filename of the saved model
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the model was created
+    accuracy = models.FloatField(null=True, blank=True)  # Accuracy metric
+    precision = models.FloatField(null=True, blank=True)  # Precision metric
+    recall = models.FloatField(null=True, blank=True)  # Recall metric
+    f1_score = models.FloatField(null=True, blank=True)  # F1-score metric
+    is_active = models.BooleanField(default=False)  # Whether this model is currently in use
+
+    def __str__(self):
+        return f"Model {self.file_name} - {'Active' if self.is_active else 'Inactive'}"
+
+
 class Review(models.Model):
     product_source = models.ForeignKey(ProductSource, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
@@ -33,6 +46,7 @@ class Review(models.Model):
     confidence = models.FloatField()
     human_sentiment = models.CharField(max_length=50, null=True, blank=True)  # Corrected sentiment
     needs_review = models.BooleanField(default=False)  # Mark for admin review
+    linked_ml_model = models.ForeignKey(MLModel, on_delete=models.SET_NULL, null=True, blank=True, related_name="trained_reviews")
 
     def __str__(self):
         return f"Review for {self.product_source.product.name} on {self.product_source.marketplace}"

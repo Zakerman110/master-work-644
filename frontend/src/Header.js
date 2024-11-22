@@ -13,6 +13,11 @@ const Header = () => (
                     Панель Адміна
                 </Link>
             </li>
+            <li>
+                <Link to="/models" className="hover:underline">
+                    Моделі
+                </Link>
+            </li>
         </ul>
     </nav>
 );

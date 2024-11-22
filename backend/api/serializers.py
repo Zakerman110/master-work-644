@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Product, ProductSource, Review
+from api.models import Product, ProductSource, Review, MLModel
 
 
 class ProductSourceSerializer(serializers.ModelSerializer):
@@ -16,10 +16,25 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'category', 'image_url', 'is_detailed', 'sources']
 
 
+class MLModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MLModel
+        fields = [
+            "id",
+            "file_name",
+            "created_at",
+            "accuracy",
+            "precision",
+            "recall",
+            "f1_score",
+            "is_active",
+        ]
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['id', 'text', 'rating', 'model_sentiment', 'confidence', 'human_sentiment', 'needs_review']
+        fields = ['id', 'text', 'rating', 'model_sentiment', 'confidence', 'human_sentiment', 'needs_review', "linked_ml_model",]
 
 
 class DetailedProductSerializer(serializers.ModelSerializer):

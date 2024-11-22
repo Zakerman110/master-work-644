@@ -1,10 +1,14 @@
 from django.urls import path, include
 from . import views
-from .views import mark_review_for_review, list_reviews_needing_review, update_review_sentiment, add_user_review
+from .views import mark_review_for_review, list_reviews_needing_review, update_review_sentiment, add_user_review, \
+    list_ml_models, activate_ml_model, train_model
 
 admin_patterns = [
     path('reviews/', list_reviews_needing_review, name='list_reviews_needing_review'),
     path('reviews/<int:review_id>/update-sentiment/', update_review_sentiment, name='update_review_sentiment'),
+    path('models/', list_ml_models, name='list-ml-models'),
+    path('models/<int:model_id>/activate/', activate_ml_model, name='activate-ml-model'),
+    path('models/train/', train_model, name='train-model'),
 ]
 
 urlpatterns = [

@@ -3,8 +3,9 @@ from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from api.scrapers import scraper_manager
-from api.models import Product, Review, ProductSource
-from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer
+from api.models import Product, Review, ProductSource, MLModel
+from api.sentiment.active_ml import train_new_model
+from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer, MLModelSerializer
 from api.utils.category_utils import ROZETKA_CATEGORIES
 from api.sentiment.sentiment_model import predict_sentiment
 
@@ -202,3 +203,57 @@ def list_reviews_needing_review(request):
         }
         for review in result_page
     ])
+
+
+@api_view(['GET'])
+def list_ml_models(request):
+    """
+    List all ML models with their metrics and status.
+    """
+    models = MLModel.objects.all().order_by('-created_at')
+    serializer = MLModelSerializer(models, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def activate_ml_model(request, model_id):
+    """
+    Activate the specified ML model and deactivate others.
+    """
+    try:
+        # Deactivate all models
+        MLModel.objects.update(is_active=False)
+
+        # Activate the specified model
+        model = MLModel.objects.get(id=model_id)
+        model.is_active = True
+        model.save()
+
+        return Response({"message": f"Model '{model.file_name}' has been activated."}, status=status.HTTP_200_OK)
+    except MLModel.DoesNotExist:
+        return Response({"error": "ML Model not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def train_model(request):
+    """
+    Train a new sentiment analysis model using selected reviews.
+    """
+    try:
+        reviews = Review.objects.filter(human_sentiment__isnull=False)
+        texts = [review.text for review in reviews]
+        labels = [review.human_sentiment for review in reviews]
+
+        if not texts or not labels:
+            return Response({"error": "No reviews available for training."}, status=status.HTTP_400_BAD_REQUEST)
+
+        ml_model = train_new_model(texts, labels)
+
+        serialized_ml_model = MLModelSerializer(ml_model, many=True)
+
+        return Response({
+            "message": "Model training completed successfully.",
+            "data": serialized_ml_model
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
