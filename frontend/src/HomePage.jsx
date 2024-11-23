@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useContext} from "react";
 import apiClient from "./axiosConfig";
+import {AuthContext} from "./AuthContext";
 
 const HomePage = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +16,7 @@ const HomePage = () => {
     const [userReview, setUserReview] = useState("");
     const [userRating, setUserRating] = useState(0);
     const [filterSentiment, setFilterSentiment] = useState("all");
+    const { user, logout } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -338,7 +340,7 @@ const HomePage = () => {
                                             </span>
                                                             )}
                                                         </div>
-                                                        {!isVerified && (
+                                                        {!isVerified && user && (
                                                             <button
                                                                 onClick={() => markReviewForReview(review.id)}
                                                                 className="px-3 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
@@ -357,36 +359,38 @@ const HomePage = () => {
                             </div>
                         );
                     })}
-                    <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
-                        <h3 className="text-xl font-bold mb-4">Додати відгук</h3>
-                        <textarea
-                            value={userReview}
-                            onChange={(e) => setUserReview(e.target.value)}
-                            placeholder="Напишість свій коментарій..."
-                            className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <div className="flex items-center mb-4">
-                            <label className="mr-4 text-lg">Оцінка:</label>
-                            <select
-                                value={userRating}
-                                onChange={(e) => setUserRating(parseFloat(e.target.value))}
-                                className="p-2 border border-gray-300 rounded"
+                    {user &&
+                        <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
+                            <h3 className="text-xl font-bold mb-4">Додати відгук</h3>
+                            <textarea
+                                value={userReview}
+                                onChange={(e) => setUserReview(e.target.value)}
+                                placeholder="Напишість свій коментарій..."
+                                className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="flex items-center mb-4">
+                                <label className="mr-4 text-lg">Оцінка:</label>
+                                <select
+                                    value={userRating}
+                                    onChange={(e) => setUserRating(parseFloat(e.target.value))}
+                                    className="p-2 border border-gray-300 rounded"
+                                >
+                                    <option value={0}>Вибір</option>
+                                    {[1, 2, 3, 4, 5].map((rating) => (
+                                        <option key={rating} value={rating}>
+                                            {rating} Star{rating > 1 ? "s" : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                onClick={handleAddReview}
+                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                             >
-                                <option value={0}>Вибір</option>
-                                {[1, 2, 3, 4, 5].map((rating) => (
-                                    <option key={rating} value={rating}>
-                                        {rating} Star{rating > 1 ? "s" : ""}
-                                    </option>
-                                ))}
-                            </select>
+                                Залишити відгук
+                            </button>
                         </div>
-                        <button
-                            onClick={handleAddReview}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Залишити відгук
-                        </button>
-                    </div>
+                    }
                 </div>
             )}
         </div>

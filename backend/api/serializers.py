@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from api.models import Product, ProductSource, Review, MLModel
 
@@ -45,3 +46,14 @@ class DetailedProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'image_url', 'description', 'is_detailed', 'sources', 'reviews']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'role']
+
+    def get_role(self, obj):
+        return 'admin' if obj.is_staff else 'user'

@@ -1,13 +1,25 @@
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+
+from api.auth.permissions import IsAdmin
 from api.scrapers import scraper_manager
 from api.models import Product, Review, ProductSource, MLModel
 from api.sentiment.active_ml import train_new_model
-from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer, MLModelSerializer
+from api.serializers import ProductSerializer, DetailedProductSerializer, ReviewSerializer, MLModelSerializer, \
+    UserSerializer
 from api.utils.category_utils import ROZETKA_CATEGORIES
 from api.sentiment.sentiment_model import predict_sentiment
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user(request):
+    user = request.user
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -88,6 +100,7 @@ def get_rozetka_categories(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def mark_review_for_review(request, review_id):
     """
     Mark a review for admin review.
@@ -114,6 +127,7 @@ def mark_review_for_review(request, review_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdmin])
 def update_review_sentiment(request, review_id):
     """
     Update the sentiment of a review by an admin.
@@ -134,6 +148,7 @@ def update_review_sentiment(request, review_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_user_review(request, product_id):
     """
     Add a user-generated review for a specific product.
@@ -176,6 +191,7 @@ class ReviewPagination(PageNumberPagination):
 
 
 @api_view(['GET'])
+@permission_classes([IsAdmin])
 def list_reviews_needing_review(request):
     """
     Retrieve reviews marked for review or with low confidence.
@@ -206,6 +222,7 @@ def list_reviews_needing_review(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAdmin])
 def list_ml_models(request):
     """
     List all ML models with their metrics, status, and statistics.
@@ -242,6 +259,7 @@ def list_ml_models(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdmin])
 def activate_ml_model(request, model_id):
     """
     Activate the specified ML model and deactivate others.
@@ -261,6 +279,7 @@ def activate_ml_model(request, model_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdmin])
 def train_model(request):
     """
     Train a new sentiment analysis model using selected reviews.

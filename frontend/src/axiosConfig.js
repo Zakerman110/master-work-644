@@ -23,6 +23,10 @@ apiClient.interceptors.request.use((config) => {
     if (csrfToken) {
         config.headers["X-CSRFToken"] = csrfToken;
     }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
 });
 
