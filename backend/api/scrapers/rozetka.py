@@ -46,7 +46,17 @@ def scrape_rozetka_suggestions(product_name, category_id=None):
             category_link = wait.until(EC.presence_of_element_located((By.XPATH, f'//a[@data-test="filter-link" and ./span[.="{key}"]]')))
             category_link.click()
             time.sleep(2)
-            wait.until(EC.presence_of_element_located((By.XPATH, f'//li[contains(@class,"breadcrumbs__item ")]//span[.="{key}"]')))
+            try:
+                wait.until(EC.presence_of_element_located(
+                    (By.XPATH, f'//li[contains(@class,"breadcrumbs__item ")]//span[.="{key}"]')))
+                print("First condition satisfied")
+            except:
+                try:
+                    wait.until(EC.presence_of_element_located((By.XPATH,
+                                                               f'//button[contains(@class,"catalog-selection__link") and contains(text(),"{key}")]')))
+                    print("Second condition satisfied")
+                except:
+                    raise Exception("Neither condition was met.")
             suggestions = get_catalog_grid_product(driver, key)
         else:
             for category_name, _ in ROZETKA_CATEGORIES.items():

@@ -192,24 +192,57 @@ const HomePage = () => {
                         {suggestions.map((suggestion) => (
                             <div
                                 key={suggestion.id}
-                                className={`flex flex-col items-center bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg ${
+                                className={`flex flex-col bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg ${
                                     suggestion.is_detailed ? "border-green-500 border-2" : "border-gray-300"
                                 }`}
                                 onClick={() => handleSelectProduct(suggestion.name)}
                             >
-                                <img
-                                    src={suggestion.image_url || "placeholder.jpg"}
-                                    alt={suggestion.name}
-                                    className="w-32 h-32 object-cover mb-4"
-                                />
-                                <p className="text-center font-medium">{suggestion.name}</p>
-                                <span
-                                    className={`px-2 py-1 mt-2 rounded text-sm ${
-                                        suggestion.is_detailed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                                    }`}
-                                >
-                                    {suggestion.is_detailed ? "В системі" : "Потребує скрапінгу"}
-                                </span>
+                                <div className="flex items-center">
+                                    {/* Image Section */}
+                                    <div className="flex-shrink-0 w-32 h-32">
+                                        <img
+                                            src={suggestion.image_url || "placeholder.jpg"}
+                                            alt={suggestion.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+
+                                    {/* Details Section */}
+                                    <div className="ml-4 flex-grow text-gray-700">
+                                        <p className="text-lg font-medium mb-2">{suggestion.name}</p>
+                                        <span
+                                            className={`inline-block px-2 py-1 rounded text-sm mb-4 ${
+                                                suggestion.is_detailed
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-yellow-100 text-yellow-700"
+                                            }`}
+                                        >
+                                {suggestion.is_detailed ? "В системі" : "Потребує скрапінгу"}
+                            </span>
+                                        {suggestion.is_detailed && (
+                                            <div className="text-sm">
+                                                <p>
+                                                    <strong>Рейтинг:</strong>{" "}
+                                                    {suggestion.average_rating ? suggestion.average_rating.toFixed(1) : "N/A"}
+                                                </p>
+                                                <p>
+                                                    <strong>Настрої:</strong>
+                                                </p>
+                                                <ul className="list-disc list-inside">
+                                                    <li className="text-green-600">
+                                                        Позитивні: {suggestion.sentiments.positive}
+                                                    </li>
+                                                    <li className="text-yellow-600">
+                                                        Нейтральні: {suggestion.sentiments.neutral}
+                                                    </li>
+                                                    <li className="text-red-600">
+                                                        Негативні: {suggestion.sentiments.negative}
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -233,6 +266,7 @@ const HomePage = () => {
                 </div>
             )}
 
+
             {/* Render Selected Product */}
             {selectedProduct && (
                 <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
@@ -240,7 +274,7 @@ const HomePage = () => {
                     <img
                         src={selectedProduct.image_url || "placeholder.jpg"}
                         alt={selectedProduct.name}
-                        className="w-full max-h-64 object-cover mb-4"
+                        className="w-full max-h-64 object-contain mb-4"
                     />
                     <p className="text-gray-700 mb-4">{selectedProduct.description}</p>
 

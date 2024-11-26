@@ -1,3 +1,4 @@
+from django.db.models import Avg, Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -35,15 +36,52 @@ def get_product_suggestions(request):
     # Get product suggestions from scraper_manager
     suggestions = scraper_manager.get_product_suggestions(query, category_id)
 
+    # Enrich suggestions with average rating and sentiments
+    enriched_suggestions = []
+    for suggestion in suggestions:
+        if suggestion.is_detailed:
+            # Aggregate reviews data for detailed products
+            reviews = Review.objects.filter(product_source__product=suggestion)
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+            sentiments = reviews.aggregate(
+                positive=Count('model_sentiment', filter=Q(model_sentiment="Positive")),
+                neutral=Count('model_sentiment', filter=Q(model_sentiment="Neutral")),
+                negative=Count('model_sentiment', filter=Q(model_sentiment="Negative")),
+            )
+            enriched_suggestions.append({
+                "id": suggestion.id,
+                "name": suggestion.name,
+                "image_url": suggestion.image_url,
+                "is_detailed": suggestion.is_detailed,
+                "average_rating": avg_rating,
+                "sentiments": {
+                    "positive": sentiments['positive'],
+                    "neutral": sentiments['neutral'],
+                    "negative": sentiments['negative']
+                }
+            })
+        else:
+            # For non-detailed products
+            enriched_suggestions.append({
+                "id": suggestion.id,
+                "name": suggestion.name,
+                "image_url": suggestion.image_url,
+                "is_detailed": suggestion.is_detailed,
+                "average_rating": None,
+                "sentiments": {
+                    "positive": 0,
+                    "neutral": 0,
+                    "negative": 0
+                }
+            })
+
+    # Pagination
     paginator = PageNumberPagination()
     paginator.page_size = 21
-    paginated_suggestions = paginator.paginate_queryset(suggestions, request)
+    paginated_suggestions = paginator.paginate_queryset(enriched_suggestions, request)
 
-    # Serialize paginated suggestions
-    serialized_suggestions = ProductSerializer(paginated_suggestions, many=True)
+    return paginator.get_paginated_response(paginated_suggestions)
 
-    # Return paginated response
-    return paginator.get_paginated_response(serialized_suggestions.data)
 
 
 @api_view(['GET'])
