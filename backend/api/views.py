@@ -95,12 +95,15 @@ def get_product_details(request):
     """
     Retrieve detailed information and reviews for a specific product by name.
     """
-    product_name = request.GET.get('name', '')
-    if not product_name:
-        return Response({"error": "Name parameter is required."}, status=400)
+    product_id = request.GET.get('productId', '')
+    if not product_id:
+        return Response({"error": "productId parameter is required."}, status=400)
 
     # Get or scrape detailed product information
-    product = scraper_manager.scrape_and_save_product(product_name)
+    product_db = Product.objects.get(id=product_id)
+    if not product_db:
+        return Response({"error": "Product not found."}, status=404)
+    product = scraper_manager.scrape_and_save_product(product_db.name)
 
     if not product:
         return Response({"error": "Product not found."}, status=404)
