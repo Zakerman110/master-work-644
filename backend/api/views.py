@@ -26,15 +26,21 @@ def get_user(request):
 @api_view(['GET'])
 def get_product_suggestions(request):
     """
-    Retrieve product suggestions based on a search query.
+    Retrieve product suggestions based on a search query and allow sorting by `is_detailed`.
     """
     query = request.GET.get('query', '')
     category_id = request.GET.get('category_id', None)
+    sort_by = request.GET.get('sort_by', '')  # New parameter for sorting
+
     if not query:
         return Response({"error": "Query parameter is required."}, status=400)
 
     # Get product suggestions from scraper_manager
     suggestions = scraper_manager.get_product_suggestions(query, category_id)
+
+    # Sort suggestions by `is_detailed` if specified
+    if sort_by in ['is_detailed', '-is_detailed']:
+        suggestions = sorted(suggestions, key=lambda x: getattr(x, 'is_detailed'), reverse=sort_by.startswith('-'))
 
     # Enrich suggestions with average rating and sentiments
     enriched_suggestions = []

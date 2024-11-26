@@ -15,6 +15,7 @@ const HomePage = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [userReview, setUserReview] = useState("");
     const [userRating, setUserRating] = useState(0);
+    const [sortBy, setSortBy] = useState(""); // New state for sorting
     const [filterSentiment, setFilterSentiment] = useState("all");
     const { user, logout } = useContext(AuthContext);
 
@@ -79,6 +80,7 @@ const HomePage = () => {
                     query: searchTerm,
                     category_id: selectedCategory,
                     page: page,
+                    sort_by: sortBy,
                 },
             });
 
@@ -180,6 +182,17 @@ const HomePage = () => {
                             {category.name}
                         </option>
                     ))}
+                </select>
+
+                {/* Sort Dropdown */}
+                <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="">Сортувати за</option>
+                    <option value="-is_detailed">Деталізовані спочатку</option>
+                    <option value="is_detailed">Недеталізовані спочатку</option>
                 </select>
             </div>
 
