@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "./axiosConfig";
+import { toast } from 'react-toastify';
 
 const ModelsPanel = () => {
     const [models, setModels] = useState([]);
@@ -16,7 +17,7 @@ const ModelsPanel = () => {
             setModels(response.data.models);
             setUnassociatedReviewsCount(response.data.unassociated_reviews_count);
         } catch (err) {
-            setError("Error fetching models.");
+            setError("Не вдалося отримати моделі.");
             console.error(err);
         }
     };
@@ -24,22 +25,22 @@ const ModelsPanel = () => {
     const handleActivateModel = async (modelId) => {
         try {
             await apiClient.post(`/api/admin/models/${modelId}/activate/`);
-            alert("Model activated successfully.");
+            toast.success("Модель успішно активовано.");
             fetchModels(); // Refresh the list
         } catch (err) {
             console.error("Error activating model:", err);
-            alert("Failed to activate model.");
+            toast.error("Не вдалося активувати модель.");
         }
     };
 
     const handleTrainModel = async () => {
         try {
             const response = await apiClient.post("/api/admin/models/train/");
-            alert("Model training completed successfully.");
+            toast.success("Навчання моделі успішно завершено.");
             fetchModels(); // Refresh the list of models
         } catch (err) {
             console.error("Error training model:", err);
-            alert("Failed to train model.");
+            toast.error("Не вдалося навчити модель.");
         }
     };
 

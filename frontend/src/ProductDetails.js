@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import apiClient from "./axiosConfig";
 import {AuthContext} from "./AuthContext";
 import ReviewStars from "./Components/ReviewStars";
+import { toast } from 'react-toastify';
 
 const ProductDetails = () => {
     const { productId } = useParams();
@@ -57,7 +58,7 @@ const ProductDetails = () => {
                     overallScore: totalReviews > 0 ? (totalRating / totalReviews).toFixed(2) : "N/A",
                 });
             } catch (err) {
-                setError("Error fetching product details or reviews.");
+                setError("Помилка при отриманні інформації про товар або відгуків.");
                 console.error(err);
             }
         };
@@ -68,7 +69,7 @@ const ProductDetails = () => {
     const handleAddReview = async () => {
         try {
             if (!userReview || userRating <= 0) {
-                alert("Please provide a valid comment and rating.");
+                toast.error("Будь ласка, надайте коментар та оцінку.");
                 return;
             }
 
@@ -77,7 +78,7 @@ const ProductDetails = () => {
                 rating: userRating,
             });
 
-            alert("Your review has been submitted!");
+            toast.success("Ваш відгук було надіслано!");
             setUserReview("");
             setUserRating(0);
 
@@ -86,16 +87,17 @@ const ProductDetails = () => {
             setReviewsBySource(reviewsResponse.data);
         } catch (err) {
             console.error("Error adding review:", err);
-            alert("Failed to submit your review.");
+            toast.error("Не вдалося надіслати ваш відгук.");
         }
     };
 
     const markReviewForReview = async (reviewId) => {
         try {
             await apiClient.post(`/api/reviews/${reviewId}/mark-for-review/`);
-            alert("Review marked for admin review.");
+            toast.success("Відгук позначено для перегляду адміністратором.");
         } catch (err) {
             console.error("Error marking review for review:", err);
+            toast.error("Не вдалося позначити відгук для перегляду.");
         }
     };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "./axiosConfig";
+import { toast } from 'react-toastify';
 
 const AdminPanel = () => {
     const [reviews, setReviews] = useState([]);
@@ -29,7 +30,7 @@ const AdminPanel = () => {
             setReviews(response.data.results);
             setTotalPages(Math.ceil(response.data.count / 21));
         } catch (err) {
-            setError("Error fetching reviews.");
+            setError("Не вдалося отримати відгуки.");
             console.error(err);
         } finally {
             setLoading(false);
@@ -41,11 +42,11 @@ const AdminPanel = () => {
             await apiClient.post(`/api/admin/reviews/${reviewId}/update-sentiment/`, {
                 human_sentiment: sentiment,
             });
-            alert("Review sentiment updated successfully.");
+            toast.success("Відгуки успішно оновлено.");
             fetchReviews(currentPage); // Refresh the list
         } catch (err) {
             console.error("Error updating sentiment:", err);
-            alert("Failed to update sentiment.");
+            toast.error("Не вдалося оновити відгук.");
         }
     };
 

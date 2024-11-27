@@ -14,7 +14,7 @@ const LoginPage = () => {
         try {
             await login(username, password);
         } catch (err) {
-            setError("Invalid username or password. Please try again.");
+            setError("Неправильне ім'я користувача або пароль. Будь ласка, спробуйте ще раз.");
         }
     };
 

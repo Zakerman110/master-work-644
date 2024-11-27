@@ -10,38 +10,43 @@ import LoginPage from "./LoginPage";
 import {AuthProviderWrapper} from "./AuthProviderWrapper";
 import ProductDetails from "./ProductDetails";
 import {SearchProvider} from "./SearchContext";
+import {ToastContainer} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   return (
-      <SearchProvider>
-          <Router>
-              <AuthProviderWrapper>
-                  <Header />
-                  <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route
-                          path="/admin"
-                          element={
-                              <ProtectedRoute role="admin">
-                                  <AdminPanel />
-                              </ProtectedRoute>
-                          }
-                      />
-                      <Route
-                          path="/models"
-                          element={
-                              <ProtectedRoute role="admin">
-                                  <ModelsPanel />
-                              </ProtectedRoute>
-                          }
-                      />
-                      <Route path="/product/:productId" element={<ProductDetails />} />
-                      <Route path="*" element={<div>404 Not Found</div>} />
-                  </Routes>
-              </AuthProviderWrapper>
-          </Router>
-      </SearchProvider>
+      <>
+          <SearchProvider>
+              <Router>
+                  <AuthProviderWrapper>
+                      <Header />
+                      <Routes>
+                          <Route path="/" element={<HomePage />} />
+                          <Route path="/login" element={<LoginPage />} />
+                          <Route
+                              path="/admin"
+                              element={
+                                  <ProtectedRoute role="admin">
+                                      <AdminPanel />
+                                  </ProtectedRoute>
+                              }
+                          />
+                          <Route
+                              path="/models"
+                              element={
+                                  <ProtectedRoute role="admin">
+                                      <ModelsPanel />
+                                  </ProtectedRoute>
+                              }
+                          />
+                          <Route path="/product/:productId" element={<ProductDetails />} />
+                          <Route path="*" element={<div>404 Not Found</div>} />
+                      </Routes>
+                  </AuthProviderWrapper>
+              </Router>
+          </SearchProvider>
+          <ToastContainer />
+      </>
   );
 };
 

@@ -49,7 +49,7 @@ const HomePage = () => {
             setTotalPages(Math.ceil(response.data.count / 21));
             setCurrentPage(page);
         } catch (err) {
-            setError("Error fetching suggestions.");
+            setError("Помилки при отриманні пропозицій.");
             console.error(err);
         }
     };
