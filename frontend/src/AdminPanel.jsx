@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "./axiosConfig";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const AdminPanel = () => {
     const [reviews, setReviews] = useState([]);
@@ -8,9 +9,8 @@ const AdminPanel = () => {
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
-    const [reviewMode, setReviewMode] = useState("marked"); // Default mode is "marked"
-    const [confidenceThreshold, setConfidenceThreshold] = useState(0.6); // Default threshold
-
+    const [reviewMode, setReviewMode] = useState("marked");
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.6);
 
     useEffect(() => {
         fetchReviews(currentPage);
@@ -73,7 +73,7 @@ const AdminPanel = () => {
                             reviewMode === "marked" ? "bg-blue-500" : "bg-gray-300 hover:bg-gray-400"
                         }`}
                     >
-                        Marked for Review
+                        Позначені до розгляду
                     </button>
                     <button
                         onClick={() => {
@@ -85,13 +85,13 @@ const AdminPanel = () => {
                             reviewMode === "low_confidence" ? "bg-blue-500" : "bg-gray-300 hover:bg-gray-400"
                         }`}
                     >
-                        Low Confidence
+                        Низька впевненість
                     </button>
                 </div>
 
                 {reviewMode === "low_confidence" && (
                     <div className="flex items-center">
-                        <label className="mr-2 text-gray-700">Confidence Threshold:</label>
+                        <label className="mr-2 text-gray-700">Поріг впевненості:</label>
                         <input
                             type="number"
                             value={confidenceThreshold}
@@ -105,12 +105,12 @@ const AdminPanel = () => {
                             onClick={() => fetchReviews(1)}
                             className="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                         >
-                            Apply
+                            Застосувати
                         </button>
                     </div>
                 )}
             </div>
-            
+
             {!loading && reviews.length === 0 && <p>Ніякі відгуки не потребують розгляду.</p>}
 
             {reviews.length > 0 && (
@@ -122,21 +122,32 @@ const AdminPanel = () => {
                                 className="bg-white shadow-md rounded-lg p-4 flex flex-col gap-4"
                             >
                                 <p>
-                                    <strong>Review:</strong> {review.text}
+                                    <strong>Відгук:</strong> {review.text}
                                 </p>
                                 <p>
-                                    <strong>Rating:</strong> {review.rating}
+                                    <strong>Оцінка:</strong> {review.rating}
                                 </p>
                                 <p>
-                                    <strong>Model Sentiment:</strong> {review.model_sentiment}
+                                    <strong>Настрій моделі:</strong> {review.model_sentiment}
                                 </p>
                                 {reviewMode === "low_confidence" && (
                                     <p>
-                                        <strong>Confidence:</strong> {review.confidence.toFixed(2)}
+                                        <strong>Впевненість:</strong> {review.confidence.toFixed(2)}
+                                    </p>
+                                )}
+                                {review.product && (
+                                    <p>
+                                        <strong>Товар:</strong>{" "}
+                                        <Link
+                                            to={`/product/${review.product.id}`}
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            {review.product.name}
+                                        </Link>
                                     </p>
                                 )}
                                 <div>
-                                    <strong>Update Sentiment:</strong>
+                                    <strong>Оновити настрій:</strong>
                                     <div className="flex gap-2 mt-2">
                                         {["Positive", "Neutral", "Negative"].map((sentiment) => (
                                             <button
@@ -146,8 +157,8 @@ const AdminPanel = () => {
                                                     sentiment === "Positive"
                                                         ? "bg-green-500 hover:bg-green-600"
                                                         : sentiment === "Neutral"
-                                                            ? "bg-yellow-500 hover:bg-yellow-600"
-                                                            : "bg-red-500 hover:bg-red-600"
+                                                        ? "bg-yellow-500 hover:bg-yellow-600"
+                                                        : "bg-red-500 hover:bg-red-600"
                                                 }`}
                                             >
                                                 {sentiment}

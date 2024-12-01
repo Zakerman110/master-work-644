@@ -89,7 +89,6 @@ def get_product_suggestions(request):
     return paginator.get_paginated_response(paginated_suggestions)
 
 
-
 @api_view(['GET'])
 def get_product_details(request):
     """
@@ -263,9 +262,14 @@ def list_reviews_needing_review(request):
             "rating": review.rating,
             "model_sentiment": review.model_sentiment,
             "confidence": review.confidence,
+            "product": {
+                "id": review.product_source.product.id,
+                "name": review.product_source.product.name,
+            } if review.product_source and review.product_source.product else None,
         }
         for review in result_page
     ])
+
 
 
 @api_view(['GET'])
